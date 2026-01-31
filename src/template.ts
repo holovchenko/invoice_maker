@@ -38,7 +38,7 @@ export function renderInvoiceHTML(data: InvoiceData): string {
 <style>
   @page {
     size: A4;
-    margin: 10mm 12mm 10mm 12mm;
+    margin: 0;
   }
 
   * {
@@ -96,10 +96,10 @@ export function renderInvoiceHTML(data: InvoiceData): string {
   }
 
   .items-table .col-no { width: 5%; }
-  .items-table .col-desc { width: 45%; }
-  .items-table .col-qty { width: 13%; }
-  .items-table .col-price { width: 15%; }
-  .items-table .col-amount { width: 22%; }
+  .items-table .col-desc { width: 35%; }
+  .items-table .col-qty { width: 14%; }
+  .items-table .col-price { width: 16%; }
+  .items-table .col-amount { width: 18%; }
 
   .total-row {
     margin-top: 0;
@@ -131,6 +131,18 @@ export function renderInvoiceHTML(data: InvoiceData): string {
 
   .text-right {
     text-align: right;
+  }
+
+  .bank-table {
+    width: auto;
+    border-collapse: collapse;
+    margin-top: 2px;
+  }
+
+  .bank-table td {
+    border: none;
+    padding: 0 8px 0 0;
+    vertical-align: top;
   }
 </style>
 </head>
@@ -206,11 +218,13 @@ export function renderInvoiceHTML(data: InvoiceData): string {
       Beneficiary&#39;s bank: Example Bank
     </td>
     <td>
-      <span class="label">Supplier Bank information:</span><br>
-      Beneficiary: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PE Doe John<br>
-      SEPA: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GB00XXXX00000000000000<br>
-      BIC: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;XXXXGB00<br>
-      Receiver: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DOE JOHN
+      <span class="label">Supplier Bank information:</span>
+      <table class="bank-table">
+        <tr><td>Beneficiary:</td><td>PE Doe John</td></tr>
+        <tr><td>SEPA:</td><td>GB00XXXX00000000000000</td></tr>
+        <tr><td>BIC:</td><td>XXXXGB00</td></tr>
+        <tr><td>Receiver:</td><td>DOE JOHN</td></tr>
+      </table>
     </td>
   </tr>
 </table>
