@@ -4,6 +4,20 @@ import fs from "fs";
 
 const OUTPUT_DIR = path.resolve(process.cwd(), "output");
 
+function getUniqueFilePath(dir: string, fileName: string): string {
+  const ext = path.extname(fileName);
+  const base = path.basename(fileName, ext);
+  let filePath = path.join(dir, fileName);
+  let counter = 1;
+
+  while (fs.existsSync(filePath)) {
+    filePath = path.join(dir, `${base}_${counter}${ext}`);
+    counter++;
+  }
+
+  return filePath;
+}
+
 export async function generatePDF(
   html: string,
   fileName: string
@@ -12,7 +26,7 @@ export async function generatePDF(
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  const filePath = path.join(OUTPUT_DIR, fileName);
+  const filePath = getUniqueFilePath(OUTPUT_DIR, fileName);
   const browser = await puppeteer.launch({ headless: true });
 
   try {
@@ -20,9 +34,8 @@ export async function generatePDF(
     await page.setContent(html, { waitUntil: "networkidle0" });
     await page.pdf({
       path: filePath,
-      format: "A4",
+      preferCSSPageSize: true,
       printBackground: true,
-      margin: { top: "12mm", right: "18mm", bottom: "12mm", left: "18mm" },
     });
   } finally {
     await browser.close();

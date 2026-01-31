@@ -40,8 +40,11 @@ app.post("/api/generate", async (req, res) => {
     const html = renderInvoiceHTML(data);
     const fileName = generateFileName(invoiceDate);
     const filePath = await generatePDF(html, fileName);
+    const actualFileName = path.basename(filePath);
 
-    res.download(filePath, fileName);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=${actualFileName}`);
+    res.sendFile(filePath);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error";

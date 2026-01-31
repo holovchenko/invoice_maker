@@ -38,7 +38,7 @@ export function renderInvoiceHTML(data: InvoiceData): string {
 <style>
   @page {
     size: A4;
-    margin: 0;
+    margin: 15mm 20mm;
   }
 
   * {
