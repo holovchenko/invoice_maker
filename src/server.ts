@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { fileURLToPath } from "url";
 import { addBusinessDays } from "./business-days";
 import { amountToWordsEN, amountToWordsUA } from "./number-to-words";
 import {
@@ -15,7 +16,8 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(import.meta.dirname, "public")));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/generate", async (req, res) => {
   try {
