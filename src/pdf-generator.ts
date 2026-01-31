@@ -22,7 +22,7 @@ export async function generatePDF(
       path: filePath,
       format: "A4",
       printBackground: true,
-      margin: { top: "8mm", right: "8mm", bottom: "8mm", left: "8mm" },
+      margin: { top: "12mm", right: "18mm", bottom: "12mm", left: "18mm" },
     });
   } finally {
     await browser.close();
