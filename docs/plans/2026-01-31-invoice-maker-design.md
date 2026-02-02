@@ -72,8 +72,8 @@ Exact copy of the example PDF layout — bilingual EN/UA two-column table.
 - `{{paymentDueDate}}` — DD.MM.YYYY
 
 **Static content (from config):**
-- Supplier: name, address, tax ID (from config/supplier.json)
-- Customer: name, address, bank details (from config/customer.json)
+- Supplier: name, address, tax ID (from `config/supplier.json`)
+- Customer: name, address, bank details (from `config/customer.json`)
 - Bank info for both parties (SEPA, BIC)
 - Subject matter / Terms of payment
 - Legal text (force majeure, claims, disputes)
