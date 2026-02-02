@@ -37,4 +37,33 @@ describe("addBusinessDays", () => {
     const result = addBusinessDays(date, 0);
     expect(result).toEqual(new Date(2026, 0, 5));
   });
+
+  it("skips public holidays", () => {
+    // 2026-01-01 is Thursday (New Year)
+    // Starting 2025-12-31 (Wednesday), +1 business day
+    // Should skip Jan 1 (holiday) and land on Jan 2 (Friday)
+    const holidays = ["2026-01-01"];
+    const result = addBusinessDays(new Date(2025, 11, 31), 1, holidays);
+    expect(result).toEqual(new Date(2026, 0, 2));
+  });
+
+  it("skips consecutive holidays and weekends", () => {
+    // 2026-04-17 is Friday (Good Friday holiday in Romania)
+    // Starting 2026-04-16 (Thursday), +1 business day
+    // Apr 17 = holiday, Apr 18 = Saturday, Apr 19 = Sunday (also Easter), Apr 20 = Monday (Easter Monday holiday)
+    // Should land on Apr 21 (Tuesday)
+    const holidays = ["2026-04-17", "2026-04-19", "2026-04-20"];
+    const result = addBusinessDays(new Date(2026, 3, 16), 1, holidays);
+    expect(result).toEqual(new Date(2026, 3, 21));
+  });
+
+  it("works with empty holidays array", () => {
+    const result = addBusinessDays(new Date(2026, 0, 5), 20, []);
+    expect(result).toEqual(new Date(2026, 1, 2));
+  });
+
+  it("works without holidays parameter (backward compatible)", () => {
+    const result = addBusinessDays(new Date(2026, 0, 5), 20);
+    expect(result).toEqual(new Date(2026, 1, 2));
+  });
 });
