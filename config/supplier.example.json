@@ -1,0 +1,18 @@
+{
+  "nameEN": "Individual Entrepreneur Doe John",
+  "nameUA": "ФО-П Доу Джон Батькович",
+  "addressEN": "Ukraine, Example str., 1, 01001, Kyiv",
+  "addressUA": "01001, Київ, Прикладна, 1",
+  "registrationCode": "1234567890",
+  "signatureEN": "Doe John",
+  "signatureUA": "Доу Д.Б.",
+  "bank": {
+    "beneficiary": "PE Doe John",
+    "sepa": "GB00XXXX00000000000000",
+    "bic": "XXXXGB00",
+    "receiver": "DOE JOHN"
+  },
+  "fileNamePattern": "{surname}_Invoice_{month}_{customerShort}_{year}.pdf",
+  "surname": "Doe",
+  "customerShort": "Client"
+}

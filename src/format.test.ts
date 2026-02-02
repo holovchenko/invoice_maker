@@ -41,15 +41,21 @@ describe("generateInvoiceNumber", () => {
 });
 
 describe("generateFileName", () => {
-  it("generates filename for January 2026", () => {
-    expect(generateFileName(new Date(2026, 0, 31))).toBe(
+  it("generates filename with provided surname and customerShort", () => {
+    expect(generateFileName(new Date(2026, 0, 31), "Doe", "Hub")).toBe(
       "Doe_Invoice_Jan_Client_2026.pdf"
     );
   });
 
   it("generates filename for December 2025", () => {
-    expect(generateFileName(new Date(2025, 11, 31))).toBe(
+    expect(generateFileName(new Date(2025, 11, 31), "Doe", "Hub")).toBe(
       "Doe_Invoice_Dec_Client_2025.pdf"
+    );
+  });
+
+  it("generates filename with different surname and customer", () => {
+    expect(generateFileName(new Date(2026, 5, 15), "Smith", "Acme")).toBe(
+      "Smith_Invoice_Jun_Acme_2026.pdf"
     );
   });
 });

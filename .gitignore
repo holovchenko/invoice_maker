@@ -1,3 +1,5 @@
 node_modules/
 dist/
 output/*.pdf
+config/supplier.json
+config/customer.json

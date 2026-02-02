@@ -678,7 +678,7 @@ git commit -m "feat: add Express server with web form"
 
 Create `src/integration.test.ts` that:
 1. Imports the server logic (or calls the API endpoint)
-2. Sends a POST with `{ date: "2026-01-31", hours: 178, rate: 29 }`
+2. Sends a POST with `{ date: "2026-01-31", hours: 178, rate: 20 }`
 3. Verifies a PDF file is created in `output/` with correct name
 4. Verifies the file is non-empty
 
@@ -708,7 +708,7 @@ Run: `npm start`
 
 - Date: 2026-01-31
 - Hours: 178
-- Rate: 29
+- Rate: 20
 
 **Step 4: Click "Generate PDF"**
 

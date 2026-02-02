@@ -19,8 +19,12 @@ export function generateInvoiceNumber(date: Date): string {
   return `${date.getFullYear()}-${month}`;
 }
 
-export function generateFileName(date: Date): string {
+export function generateFileName(
+  date: Date,
+  surname: string,
+  customerShort: string,
+): string {
   const month = MONTH_NAMES[date.getMonth()];
   const year = date.getFullYear();
-  return `Doe_Invoice_${month}_Client_${year}.pdf`;
+  return `${surname}_Invoice_${month}_${customerShort}_${year}.pdf`;
 }

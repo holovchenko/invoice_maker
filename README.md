@@ -29,7 +29,7 @@ npm start
 |------|------|-----------------|
 | Invoice date | Дата інвойсу | Сьогодні |
 | Hours | Кількість годин | 168 |
-| Hourly rate (EUR) | Вартість години | 29 |
+| Hourly rate (EUR) | Вартість години | 20 |
 
 Натисни **Generate PDF** — файл завантажиться у браузер та збережеться в папці `output/`.
 
@@ -53,6 +53,7 @@ npm start
 ```
 src/
 ├── server.ts          # Express сервер, API endpoint
+├── config.ts          # Завантаження JSON-конфігів
 ├── template.ts        # HTML-шаблон інвойсу (двомовний EN/UA)
 ├── pdf-generator.ts   # Puppeteer HTML → PDF
 ├── number-to-words.ts # Число прописом (EN + UA)
@@ -60,6 +61,11 @@ src/
 ├── format.ts          # Форматування дат, сум, імен файлів
 └── public/
     └── index.html     # Веб-форма
+config/
+├── supplier.json          # Дані постачальника
+├── customer.json          # Дані замовника
+├── supplier.example.json  # Приклад конфігу постачальника
+└── customer.example.json  # Приклад конфігу замовника
 ```
 
 ## Тестування
@@ -69,7 +75,7 @@ npm test            # запуск тестів
 npm run test:watch  # запуск у watch-режимі
 ```
 
-46 тестів покривають:
+49 тестів покривають:
 - Розрахунок робочих днів (пропуск вихідних, edge cases)
 - Конвертація чисел у текст (EN + UA)
 - Форматування дат, сум, номерів інвойсів, імен файлів
@@ -77,11 +83,9 @@ npm run test:watch  # запуск у watch-режимі
 
 ## Реквізити в інвойсі
 
-Всі реквізити зашиті в шаблон (`src/template.ts`):
+Реквізити зберігаються в JSON-конфігах:
 
-- **Supplier:** name (from config/supplier.json), Київ
-- **Customer:** EXAMPLE COMPANY SRL, Bucharest
-- **Банк supplier:** SEPA GB00XXXX00000000000000, BIC XXXXGB00
-- **Банк customer:** RO00XXXX0000000000000000, Example Bank
+- `config/supplier.json` — дані постачальника (ФОП, адреса, банк)
+- `config/customer.json` — дані замовника (назва, адреса, банк)
 
-Для зміни реквізитів — редагуй `src/template.ts`.
+Для зміни реквізитів — редагуй відповідний JSON-файл. Приклади з плейсхолдерами: `config/supplier.example.json`, `config/customer.example.json`.

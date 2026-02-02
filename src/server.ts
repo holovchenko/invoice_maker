@@ -11,6 +11,10 @@ import {
 } from "./format";
 import { renderInvoiceHTML } from "./template";
 import { generatePDF } from "./pdf-generator";
+import { loadSupplierConfig, loadCustomerConfig } from "./config";
+
+const supplierConfig = loadSupplierConfig();
+const customerConfig = loadCustomerConfig();
 
 const app = express();
 const PORT = 3000;
@@ -37,8 +41,12 @@ app.post("/api/generate", async (req, res) => {
       paymentDueDate: formatDate(paymentDueDate),
     };
 
-    const html = renderInvoiceHTML(data);
-    const fileName = generateFileName(invoiceDate);
+    const html = renderInvoiceHTML(data, supplierConfig, customerConfig);
+    const fileName = generateFileName(
+      invoiceDate,
+      supplierConfig.surname,
+      supplierConfig.customerShort,
+    );
     const filePath = await generatePDF(html, fileName);
     const actualFileName = path.basename(filePath);
 

@@ -1,3 +1,5 @@
+import type { SupplierConfig, CustomerConfig } from "./config.js";
+
 export interface InvoiceData {
   readonly invoiceNumber: string;
   readonly invoiceDate: string;
@@ -18,7 +20,11 @@ function escapeHTML(text: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export function renderInvoiceHTML(data: InvoiceData): string {
+export function renderInvoiceHTML(
+  data: InvoiceData,
+  supplier: SupplierConfig,
+  customer: CustomerConfig,
+): string {
   const d = {
     invoiceNumber: escapeHTML(data.invoiceNumber),
     invoiceDate: escapeHTML(data.invoiceDate),
@@ -28,6 +34,32 @@ export function renderInvoiceHTML(data: InvoiceData): string {
     totalWordsEN: escapeHTML(data.totalWordsEN),
     totalWordsUA: escapeHTML(data.totalWordsUA),
     paymentDueDate: escapeHTML(data.paymentDueDate),
+  };
+
+  const s = {
+    nameEN: escapeHTML(supplier.nameEN),
+    nameUA: escapeHTML(supplier.nameUA),
+    addressEN: escapeHTML(supplier.addressEN),
+    addressUA: escapeHTML(supplier.addressUA),
+    registrationCode: escapeHTML(supplier.registrationCode),
+    signatureEN: escapeHTML(supplier.signatureEN),
+    signatureUA: escapeHTML(supplier.signatureUA),
+    bankBeneficiary: escapeHTML(supplier.bank.beneficiary),
+    bankSepa: escapeHTML(supplier.bank.sepa),
+    bankBic: escapeHTML(supplier.bank.bic),
+    bankReceiver: escapeHTML(supplier.bank.receiver),
+  };
+
+  const c = {
+    nameEN: escapeHTML(customer.nameEN),
+    locationEN: escapeHTML(customer.locationEN).replace(/\n/g, "<br>"),
+    taxId: escapeHTML(customer.taxId),
+    registrationCode: escapeHTML(customer.registrationCode),
+    bankAccount: escapeHTML(customer.bankAccount),
+    bankName: escapeHTML(customer.bankName),
+    bankBeneficiary: escapeHTML(customer.bank.beneficiary),
+    bankAccountNum: escapeHTML(customer.bank.account),
+    bankBankName: escapeHTML(customer.bank.bankName),
   };
 
   return `<!DOCTYPE html>
@@ -157,34 +189,32 @@ export function renderInvoiceHTML(data: InvoiceData): string {
   </tr>
   <tr>
     <td>
-      <span class="label">Supplier</span> Individual Entrepreneur Doe John<br>
-      address: Ukraine, Example str., 1, 01001, Kyiv<br>
-      registration code 1234567890
+      <span class="label">Supplier</span> ${s.nameEN}<br>
+      address: ${s.addressEN}<br>
+      registration code ${s.registrationCode}
     </td>
     <td>
-      <span class="label">Виконавець:</span> ФО-П Доу Джон Батькович, що<br>
-      проживає за адресою 01001, Київ, Прикладна, 1<br>
-      ІПН - 1234567890
+      <span class="label">Виконавець:</span> ${s.nameUA}, що<br>
+      проживає за адресою ${s.addressUA}<br>
+      ІПН - ${s.registrationCode}
     </td>
   </tr>
   <tr>
     <td>
       <span class="label">Customer:</span> Customer:<br>
-      EXAMPLE COMPANY SRL, City, District 1<br>
-      Example street no 1, 1st floor<br>
-      Tax identification number: RO00000000<br>
-      RC: J00/0000/2024<br>
-      Bank account no: RO00XXXX0000000000000000<br>
-      EXAMPLE BANK
+      ${c.nameEN}, ${c.locationEN}<br>
+      Tax identification number: ${c.taxId}<br>
+      RC: ${c.registrationCode}<br>
+      Bank account no: ${c.bankAccount}<br>
+      ${c.bankName}
     </td>
     <td>
       <span class="label">Замовник:</span><br>
-      EXAMPLE COMPANY SRL, City, District 1<br>
-      Example street no 1, 1st floor<br>
-      Tax identification number: RO00000000<br>
-      RC: J00/0000/2024<br>
-      Bank account no: RO00XXXX0000000000000000<br>
-      EXAMPLE BANK
+      ${c.nameEN}, ${c.locationEN}<br>
+      Tax identification number: ${c.taxId}<br>
+      RC: ${c.registrationCode}<br>
+      Bank account no: ${c.bankAccount}<br>
+      ${c.bankName}
     </td>
   </tr>
   <tr>
@@ -212,18 +242,18 @@ export function renderInvoiceHTML(data: InvoiceData): string {
   <tr>
     <td>
       <span class="label">Customer Bank information:</span><br>
-      Beneficiary: EXAMPLE COMPANY<br>
+      Beneficiary: ${c.bankBeneficiary}<br>
       Account #:<br>
-      RO00XXXX0000000000000000<br>
-      Beneficiary&#39;s bank: Example Bank
+      ${c.bankAccountNum}<br>
+      Beneficiary&#39;s bank: ${c.bankBankName}
     </td>
     <td>
       <span class="label">Supplier Bank information:</span>
       <table class="bank-table">
-        <tr><td>Beneficiary:</td><td>PE Doe John</td></tr>
-        <tr><td>SEPA:</td><td>GB00XXXX00000000000000</td></tr>
-        <tr><td>BIC:</td><td>XXXXGB00</td></tr>
-        <tr><td>Receiver:</td><td>DOE JOHN</td></tr>
+        <tr><td>Beneficiary:</td><td>${s.bankBeneficiary}</td></tr>
+        <tr><td>SEPA:</td><td>${s.bankSepa}</td></tr>
+        <tr><td>BIC:</td><td>${s.bankBic}</td></tr>
+        <tr><td>Receiver:</td><td>${s.bankReceiver}</td></tr>
       </table>
     </td>
   </tr>
@@ -285,7 +315,7 @@ export function renderInvoiceHTML(data: InvoiceData): string {
 
 <div class="signature">
   <span>Supplier/Виконавець: ________________</span>
-  <span>(Doe John / Доу Д.Б.)</span>
+  <span>(${s.signatureEN} / ${s.signatureUA})</span>
 </div>
 
 </body>

@@ -46,7 +46,7 @@ invoice_maker/
 |-------|------|---------|
 | Invoice date | date picker | today |
 | Hours | number | 168 |
-| Hourly rate (EUR) | number | 29 |
+| Hourly rate (EUR) | number | 20 |
 
 ## Computed Values
 
