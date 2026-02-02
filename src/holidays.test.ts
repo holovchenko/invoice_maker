@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchHolidays,
+  fetchHolidaysForRange,
   loadCachedHolidays,
   saveCachedHolidays,
   NAGER_API_BASE,
@@ -151,5 +152,46 @@ describe("fetchHolidays", () => {
     const result = await fetchHolidays(2026, "/tmp/config");
 
     expect(result).toEqual([]);
+  });
+});
+
+describe("fetchHolidaysForRange", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  it("fetches holidays for both years when they differ", async () => {
+    const year1Holidays = [{ date: "2026-12-25", localName: "Crăciunul", name: "Christmas Day" }];
+    const year2Holidays = [{ date: "2027-01-01", localName: "Anul Nou", name: "New Year's Day" }];
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => year1Holidays,
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => year2Holidays,
+      } as Response);
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    const result = await fetchHolidaysForRange(2026, 2027, "/tmp/config");
+
+    expect(result).toEqual(["2026-12-25", "2027-01-01"]);
+  });
+
+  it("fetches only once when years are the same", async () => {
+    const holidays = [{ date: "2026-01-01", localName: "Anul Nou", name: "New Year's Day" }];
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => holidays,
+    } as Response);
+    vi.mocked(existsSync).mockReturnValue(false);
+
+    const result = await fetchHolidaysForRange(2026, 2026, "/tmp/config");
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(["2026-01-01"]);
   });
 });

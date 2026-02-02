@@ -77,3 +77,18 @@ export async function fetchHolidays(
     return cached ?? [];
   }
 }
+
+export async function fetchHolidaysForRange(
+  startYear: number,
+  endYear: number,
+  configDir?: string,
+): Promise<ReadonlyArray<string>> {
+  if (startYear === endYear) {
+    return fetchHolidays(startYear, configDir);
+  }
+  const [first, second] = await Promise.all([
+    fetchHolidays(startYear, configDir),
+    fetchHolidays(endYear, configDir),
+  ]);
+  return [...first, ...second];
+}

@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { addBusinessDays } from "./business-days";
+import { fetchHolidaysForRange } from "./holidays";
 import { amountToWordsEN, amountToWordsUA } from "./number-to-words";
 import {
   formatAmount,
@@ -28,7 +29,13 @@ app.post("/api/generate", async (req, res) => {
     const { date, hours, rate } = req.body;
     const invoiceDate = new Date(date);
     const totalAmount = hours * rate;
-    const paymentDueDate = addBusinessDays(invoiceDate, 20);
+    const estimatedEndDate = new Date(invoiceDate);
+    estimatedEndDate.setDate(estimatedEndDate.getDate() + 30);
+    const holidays = await fetchHolidaysForRange(
+      invoiceDate.getFullYear(),
+      estimatedEndDate.getFullYear(),
+    );
+    const paymentDueDate = addBusinessDays(invoiceDate, 20, holidays);
 
     const data = {
       invoiceNumber: generateInvoiceNumber(invoiceDate),
