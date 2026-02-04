@@ -264,6 +264,43 @@ describe("renderInvoiceHTML", () => {
     expect(html).not.toContain("days of delay");
   });
 
+  it("hides service row when hours is zero", () => {
+    const data: InvoiceData = {
+      ...SAMPLE_DATA,
+      hours: 0,
+      rate: 0,
+      serviceAmount: "0",
+      totalAmount: "63.84",
+      penalties: [
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+      ],
+    };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    // Service row has hours and rate columns — shouldn't appear
+    expect(html).not.toMatch(/<td>0<\/td>\s*<td>0<\/td>/);
+    // Penalty should be the first row in the table
+    const match = html.match(/<tbody>\s*\n\s*\n\s*<tr>\s*<td>1<\/td>/);
+    expect(match).not.toBeNull();
+  });
+
+  it("starts penalty numbering at 1 when no service row", () => {
+    const data: InvoiceData = {
+      ...SAMPLE_DATA,
+      hours: 0,
+      rate: 0,
+      serviceAmount: "0",
+      totalAmount: "63.84",
+      penalties: [
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+      ],
+    };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    const match = html.match(/<td>1<\/td>\s*<td>Penalty for invoice/);
+    expect(match).not.toBeNull();
+  });
+
   it("escapes penalty invoiceNo to prevent XSS", () => {
     const penalties: ReadonlyArray<PenaltyRow> = [
       { invoiceNo: "<script>alert(1)</script>", delayDays: 5, penaltyAmount: "10.00" },

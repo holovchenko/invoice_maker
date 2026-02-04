@@ -63,7 +63,7 @@ app.post("/api/generate", async (req, res) => {
     const grandTotal = Math.round((serviceAmount + penaltyTotal) * 100) / 100;
 
     const data = {
-      invoiceNumber: generateInvoiceNumber(invoiceDate),
+      invoiceNumber: generateInvoiceNumber(invoiceDate) + (serviceAmount === 0 ? "-01" : ""),
       invoiceDate: formatDate(invoiceDate),
       hours,
       rate,

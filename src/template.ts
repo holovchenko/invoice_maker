@@ -279,15 +279,15 @@ export function renderInvoiceHTML(
     </tr>
   </thead>
   <tbody>
-    <tr>
+${d.hours > 0 ? `    <tr>
       <td>1</td>
       <td>Information technology services provided under contract / Послуги з інформаційних технологій, що надаються за контрактом</td>
       <td>${d.hours}</td>
       <td>${d.rate}</td>
       <td>${d.serviceAmount}</td>
-    </tr>
+    </tr>` : ""}
 ${data.penalties.map((p, i) => `    <tr>
-      <td>${i + 2}</td>
+      <td>${i + (d.hours > 0 ? 2 : 1)}</td>
       <td>Penalty for invoice ${escapeHTML(p.invoiceNo)} / Пеня за інвойс ${escapeHTML(p.invoiceNo)}</td>
       <td>${p.delayDays} days of delay</td>
       <td>${escapeHTML(p.penaltyAmount)}</td>
