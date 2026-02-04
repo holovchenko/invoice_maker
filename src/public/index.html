@@ -88,6 +88,66 @@
       margin-top: 0.75rem;
       text-align: center;
     }
+
+    .penalties-section {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .penalties-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .penalties-header button {
+      width: auto;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .penalty-row {
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .penalty-row .remove-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: auto;
+      padding: 0.1rem 0.5rem;
+      background: #d9534f;
+      font-size: 0.8rem;
+      border-radius: 3px;
+    }
+
+    .penalty-row .remove-btn:hover {
+      background: #c9302c;
+    }
+
+    .penalty-row label {
+      font-size: 0.8rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .penalty-row input {
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .penalty-preview {
+      font-size: 0.75rem;
+      color: #666;
+      background: #f9f9f9;
+      padding: 0.4rem 0.5rem;
+      border-radius: 3px;
+      margin-top: 0.25rem;
+    }
   </style>
 </head>
 <body>
@@ -103,6 +163,14 @@
       <label for="rate">Hourly rate EUR</label>
       <input type="number" id="rate" name="rate" value="20" min="1" required>
 
+      <div class="penalties-section">
+        <div class="penalties-header">
+          <label>Penalties</label>
+          <button type="button" id="add-penalty-btn">+ Add Penalty</button>
+        </div>
+        <div id="penalty-rows"></div>
+      </div>
+
       <button type="submit" id="submit-btn">Generate PDF</button>
       <div id="error-msg" class="error"></div>
     </form>
@@ -110,18 +178,116 @@
 
   <script>
     (function () {
-      const form = document.getElementById("invoice-form");
-      const dateInput = document.getElementById("date");
-      const hoursInput = document.getElementById("hours");
-      const rateInput = document.getElementById("rate");
-      const submitBtn = document.getElementById("submit-btn");
-      const errorMsg = document.getElementById("error-msg");
+      var form = document.getElementById("invoice-form");
+      var dateInput = document.getElementById("date");
+      var hoursInput = document.getElementById("hours");
+      var rateInput = document.getElementById("rate");
+      var submitBtn = document.getElementById("submit-btn");
+      var errorMsg = document.getElementById("error-msg");
+      var addPenaltyBtn = document.getElementById("add-penalty-btn");
+      var penaltyRowsContainer = document.getElementById("penalty-rows");
 
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
+      var penaltyCounter = 0;
+      var debounceTimer = null;
+
+      var today = new Date();
+      var yyyy = today.getFullYear();
+      var mm = String(today.getMonth() + 1).padStart(2, "0");
+      var dd = String(today.getDate()).padStart(2, "0");
       dateInput.value = yyyy + "-" + mm + "-" + dd;
+
+      function addPenaltyRow() {
+        var id = ++penaltyCounter;
+        var row = document.createElement("div");
+        row.className = "penalty-row";
+        row.dataset.rowId = id;
+        row.innerHTML =
+          '<button type="button" class="remove-btn">&times;</button>' +
+          '<label>Invoice No</label>' +
+          '<input type="text" class="p-invoiceNo" placeholder="2025-11">' +
+          '<label>Invoice Date</label>' +
+          '<input type="date" class="p-invoiceDate">' +
+          '<label>Invoice Amount (EUR)</label>' +
+          '<input type="number" class="p-amount" step="0.01" min="0">' +
+          '<label>Payment Received</label>' +
+          '<input type="date" class="p-received">' +
+          '<div class="penalty-preview" id="preview-' + id + '"></div>';
+
+        var removeBtn = row.querySelector(".remove-btn");
+        removeBtn.addEventListener("click", function () {
+          row.remove();
+          calculatePenalties();
+        });
+
+        var inputs = row.querySelectorAll("input");
+        for (var i = 0; i < inputs.length; i++) {
+          inputs[i].addEventListener("input", debouncedCalc);
+        }
+
+        penaltyRowsContainer.appendChild(row);
+      }
+
+      function getPenaltyInputs() {
+        var rows = penaltyRowsContainer.querySelectorAll(".penalty-row");
+        var result = [];
+        for (var i = 0; i < rows.length; i++) {
+          var row = rows[i];
+          var invoiceNo = row.querySelector(".p-invoiceNo").value;
+          var invoiceDate = row.querySelector(".p-invoiceDate").value;
+          var invoiceAmount = Number(row.querySelector(".p-amount").value);
+          var paymentReceivedDate = row.querySelector(".p-received").value;
+          if (invoiceNo && invoiceDate && invoiceAmount && paymentReceivedDate) {
+            result.push({
+              invoiceNo: invoiceNo,
+              invoiceDate: invoiceDate,
+              invoiceAmount: invoiceAmount,
+              paymentReceivedDate: paymentReceivedDate,
+              rowId: row.dataset.rowId,
+            });
+          }
+        }
+        return result;
+      }
+
+      function debouncedCalc() {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(function () {
+          calculatePenalties();
+        }, 500);
+      }
+
+      async function calculatePenalties() {
+        var inputs = getPenaltyInputs();
+        if (inputs.length === 0) {
+          return;
+        }
+
+        try {
+          var response = await fetch("/api/calculate-penalties", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ penalties: inputs }),
+          });
+          if (!response.ok) return;
+          var data = await response.json();
+          data.penalties.forEach(function (p, i) {
+            var rowId = inputs[i].rowId;
+            var preview = document.getElementById("preview-" + rowId);
+            if (preview) {
+              preview.textContent = "Due: " + p.dueDate +
+                " | Payment: " + p.actualPaymentDate +
+                " | Delay: " + p.delayDays + " days" +
+                " | Penalty: " + p.penaltyAmount.toFixed(2) + " EUR";
+            }
+          });
+        } catch (e) {
+          // silent fail for preview
+        }
+      }
+
+      addPenaltyBtn.addEventListener("click", addPenaltyRow);
 
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
@@ -130,24 +296,25 @@
         submitBtn.textContent = "Generating...";
 
         try {
-          const response = await fetch("/api/generate", {
+          var response = await fetch("/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               date: dateInput.value,
               hours: Number(hoursInput.value),
               rate: Number(rateInput.value),
+              penalties: getPenaltyInputs(),
             }),
           });
 
           if (!response.ok) {
-            const data = await response.json();
+            var data = await response.json();
             throw new Error(data.error || "Failed to generate invoice");
           }
 
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
+          var blob = await response.blob();
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement("a");
           a.href = url;
           a.download = response.headers.get("Content-Disposition")
             ? response.headers.get("Content-Disposition").split("filename=")[1]

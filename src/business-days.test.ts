@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { addBusinessDays } from "./business-days";
+import { addBusinessDays, subtractBusinessDays } from "./business-days";
 
 describe("addBusinessDays", () => {
   it("adds 20 business days to a Monday", () => {
@@ -65,5 +65,44 @@ describe("addBusinessDays", () => {
   it("works without holidays parameter (backward compatible)", () => {
     const result = addBusinessDays(new Date(2026, 0, 5), 20);
     expect(result).toEqual(new Date(2026, 1, 2));
+  });
+});
+
+describe("subtractBusinessDays", () => {
+  it("subtracts 1 business day from a Tuesday", () => {
+    // 2026-01-13 is Tuesday → -1 = 2026-01-12 (Monday)
+    const result = subtractBusinessDays(new Date(2026, 0, 13), 1);
+    expect(result).toEqual(new Date(2026, 0, 12));
+  });
+
+  it("subtracts 1 business day from a Monday (skips weekend)", () => {
+    // 2026-01-12 is Monday → -1 = 2026-01-09 (Friday)
+    const result = subtractBusinessDays(new Date(2026, 0, 12), 1);
+    expect(result).toEqual(new Date(2026, 0, 9));
+  });
+
+  it("subtracts 1 business day from a Saturday", () => {
+    // 2026-01-10 is Saturday → -1 = 2026-01-09 (Friday)
+    const result = subtractBusinessDays(new Date(2026, 0, 10), 1);
+    expect(result).toEqual(new Date(2026, 0, 9));
+  });
+
+  it("subtracts 1 business day from a Sunday", () => {
+    // 2026-01-11 is Sunday → -1 = 2026-01-09 (Friday)
+    const result = subtractBusinessDays(new Date(2026, 0, 11), 1);
+    expect(result).toEqual(new Date(2026, 0, 9));
+  });
+
+  it("skips holidays when subtracting", () => {
+    // 2026-01-02 is Friday, Jan 1 is holiday
+    // -1 business day from Jan 2 → skip Jan 1 → land on Dec 31 (Wednesday)
+    const holidays = ["2026-01-01"];
+    const result = subtractBusinessDays(new Date(2026, 0, 2), 1, holidays);
+    expect(result).toEqual(new Date(2025, 11, 31));
+  });
+
+  it("handles zero business days", () => {
+    const result = subtractBusinessDays(new Date(2026, 0, 13), 0);
+    expect(result).toEqual(new Date(2026, 0, 13));
   });
 });

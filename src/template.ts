@@ -1,14 +1,22 @@
 import type { SupplierConfig, CustomerConfig } from "./config.js";
 
+export interface PenaltyRow {
+  readonly invoiceNo: string;
+  readonly delayDays: number;
+  readonly penaltyAmount: string;
+}
+
 export interface InvoiceData {
   readonly invoiceNumber: string;
   readonly invoiceDate: string;
   readonly hours: number;
   readonly rate: number;
+  readonly serviceAmount: string;
   readonly totalAmount: string;
   readonly totalWordsEN: string;
   readonly totalWordsUA: string;
   readonly paymentDueDate: string;
+  readonly penalties: ReadonlyArray<PenaltyRow>;
 }
 
 function escapeHTML(text: string): string {
@@ -30,6 +38,7 @@ export function renderInvoiceHTML(
     invoiceDate: escapeHTML(data.invoiceDate),
     hours: data.hours,
     rate: data.rate,
+    serviceAmount: escapeHTML(data.serviceAmount),
     totalAmount: escapeHTML(data.totalAmount),
     totalWordsEN: escapeHTML(data.totalWordsEN),
     totalWordsUA: escapeHTML(data.totalWordsUA),
@@ -275,8 +284,15 @@ export function renderInvoiceHTML(
       <td>Information technology services provided under contract / Послуги з інформаційних технологій, що надаються за контрактом</td>
       <td>${d.hours}</td>
       <td>${d.rate}</td>
-      <td>${d.totalAmount}</td>
+      <td>${d.serviceAmount}</td>
     </tr>
+${data.penalties.map((p, i) => `    <tr>
+      <td>${i + 2}</td>
+      <td>Penalty for invoice ${escapeHTML(p.invoiceNo)} / Пеня за інвойс ${escapeHTML(p.invoiceNo)}</td>
+      <td>${p.delayDays} days of delay</td>
+      <td>${escapeHTML(p.penaltyAmount)}</td>
+      <td>${escapeHTML(p.penaltyAmount)}</td>
+    </tr>`).join("\n")}
     <tr>
       <td></td>
       <td></td>

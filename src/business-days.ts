@@ -26,3 +26,25 @@ export function addBusinessDays(
 
   return result;
 }
+
+export function subtractBusinessDays(
+  startDate: Date,
+  days: number,
+  holidays: ReadonlyArray<string> = [],
+): Date {
+  const holidaySet = new Set(holidays);
+  const result = new Date(startDate);
+  let subtracted = 0;
+
+  while (subtracted < days) {
+    result.setDate(result.getDate() - 1);
+    const dayOfWeek = result.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const isHoliday = holidaySet.has(formatDateKey(result));
+    if (!isWeekend && !isHoliday) {
+      subtracted++;
+    }
+  }
+
+  return result;
+}

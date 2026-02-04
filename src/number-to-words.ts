@@ -5,9 +5,19 @@ const CURRENCY_EN_PLURAL = "euros";
 const CURRENCY_UA = "євро";
 
 export const amountToWordsEN = (amount: number): string => {
-  const words = toWords(amount).replace(/,/g, "");
-  const currency = amount === 1 ? CURRENCY_EN : CURRENCY_EN_PLURAL;
-  return `${words} ${currency}`;
+  const euros = Math.floor(amount);
+  const cents = Math.round((amount - euros) * 100);
+
+  const euroWords = toWords(euros).replace(/,/g, "");
+  const euroCurrency = euros === 1 ? CURRENCY_EN : CURRENCY_EN_PLURAL;
+
+  if (cents === 0) {
+    return `${euroWords} ${euroCurrency}`;
+  }
+
+  const centWords = toWords(cents).replace(/,/g, "");
+  const centCurrency = cents === 1 ? "cent" : "cents";
+  return `${euroWords} ${euroCurrency} and ${centWords} ${centCurrency}`;
 };
 
 const UA_ONES_NEUTER: ReadonlyArray<string> = [
@@ -144,15 +154,27 @@ const convertHundredsUA = (n: number, gender: Gender): string => {
   return parts.filter((p) => p.length > 0).join(" ");
 };
 
+const getCentSuffix = (n: number): string => {
+  const lastTwo = n % 100;
+  const lastOne = n % 10;
+  if (lastTwo >= 11 && lastTwo <= 19) return "центів";
+  if (lastOne === 1) return "цент";
+  if (lastOne >= 2 && lastOne <= 4) return "центи";
+  return "центів";
+};
+
 export const amountToWordsUA = (amount: number): string => {
-  if (amount === 0) {
+  const euros = Math.floor(amount);
+  const cents = Math.round((amount - euros) * 100);
+
+  if (euros === 0 && cents === 0) {
     return `нуль ${CURRENCY_UA}`;
   }
 
   const parts: Array<string> = [];
 
-  const thousands = Math.floor(amount / 1000);
-  const remainder = amount % 1000;
+  const thousands = Math.floor(euros / 1000);
+  const remainder = euros % 1000;
 
   if (thousands > 0) {
     const thousandsWords = convertHundredsUA(thousands, "feminine");
@@ -165,7 +187,17 @@ export const amountToWordsUA = (amount: number): string => {
     parts.push(remainderWords);
   }
 
-  parts.push(CURRENCY_UA);
+  if (euros === 0) {
+    parts.push(`нуль ${CURRENCY_UA}`);
+  } else {
+    parts.push(CURRENCY_UA);
+  }
+
+  if (cents > 0) {
+    const centWords = convertHundredsUA(cents, "masculine");
+    const centSuffix = getCentSuffix(cents);
+    parts.push(`${centWords} ${centSuffix}`);
+  }
 
   return parts.join(" ");
 };
