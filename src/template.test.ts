@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderInvoiceHTML, InvoiceData } from "./template.js";
+import { renderInvoiceHTML, InvoiceData, PenaltyRow } from "./template.js";
 import type { SupplierConfig, CustomerConfig } from "./config.js";
 
 const SAMPLE_DATA: InvoiceData = {
@@ -7,10 +7,12 @@ const SAMPLE_DATA: InvoiceData = {
   invoiceDate: "31.12.2025",
   hours: 178,
   rate: 29,
+  serviceAmount: "5 162",
   totalAmount: "5 162",
   totalWordsEN: "five thousand one hundred sixty-two euros",
   totalWordsUA: "п'ять тисяч сто шістдесят два євро",
   paymentDueDate: "28.01.2026",
+  penalties: [],
 };
 
 const SAMPLE_SUPPLIER: SupplierConfig = {
@@ -200,5 +202,76 @@ describe("renderInvoiceHTML", () => {
     expect(html).toContain("ACME CORP SRL");
     expect(html).toContain("RO99999999");
     expect(html).not.toContain("EXAMPLE COMPANY SRL");
+  });
+
+  it("renders penalty rows in items table", () => {
+    const penalties: ReadonlyArray<PenaltyRow> = [
+      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+      { invoiceNo: "2025-12", delayDays: 12, penaltyAmount: "40.32" },
+    ];
+    const data: InvoiceData = {
+      ...SAMPLE_DATA,
+      serviceAmount: "5 162",
+      totalAmount: "5 266.16",
+      totalWordsEN: "five thousand two hundred sixty-six euros and sixteen cents",
+      totalWordsUA: "п'ять тисяч двісті шістдесят шість євро шістнадцять центів",
+      penalties,
+    };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    expect(html).toContain("Penalty for invoice 2025-11 / Пеня за інвойс 2025-11");
+    expect(html).toContain("19 days of delay");
+    expect(html).toContain("63.84");
+    expect(html).toContain("Penalty for invoice 2025-12 / Пеня за інвойс 2025-12");
+    expect(html).toContain("12 days of delay");
+    expect(html).toContain("40.32");
+  });
+
+  it("renders sequential row numbers for penalties", () => {
+    const penalties: ReadonlyArray<PenaltyRow> = [
+      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+    ];
+    const data: InvoiceData = { ...SAMPLE_DATA, penalties };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    // Row 1 = services, Row 2 = first penalty
+    const penaltyRowMatch = html.match(/<td>2<\/td>\s*<td>Penalty for invoice/);
+    expect(penaltyRowMatch).not.toBeNull();
+  });
+
+  it("uses serviceAmount for the service row and totalAmount for the total", () => {
+    const data: InvoiceData = {
+      ...SAMPLE_DATA,
+      serviceAmount: "3 360",
+      totalAmount: "3 423.84",
+      penalties: [
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+      ],
+    };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    // Service row should have serviceAmount
+    expect(html).toMatch(
+      /Information technology services.*?<td>3 360<\/td>/s
+    );
+    // Total row should have totalAmount
+    expect(html).toMatch(/Total\/Усього:.*?3 423\.84/s);
+  });
+
+  it("renders no penalty rows when penalties array is empty", () => {
+    const html = renderInvoiceHTML(SAMPLE_DATA, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+    expect(html).not.toContain("Penalty for invoice");
+    expect(html).not.toContain("days of delay");
+  });
+
+  it("escapes penalty invoiceNo to prevent XSS", () => {
+    const penalties: ReadonlyArray<PenaltyRow> = [
+      { invoiceNo: "<script>alert(1)</script>", delayDays: 5, penaltyAmount: "10.00" },
+    ];
+    const data: InvoiceData = { ...SAMPLE_DATA, penalties };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
   });
 });
