@@ -232,13 +232,19 @@
         var result = [];
         for (var i = 0; i < rows.length; i++) {
           var row = rows[i];
-          result.push({
-            invoiceNo: row.querySelector(".p-invoiceNo").value,
-            invoiceDate: row.querySelector(".p-invoiceDate").value,
-            invoiceAmount: Number(row.querySelector(".p-amount").value),
-            paymentReceivedDate: row.querySelector(".p-received").value,
-            rowId: row.dataset.rowId,
-          });
+          var invoiceNo = row.querySelector(".p-invoiceNo").value;
+          var invoiceDate = row.querySelector(".p-invoiceDate").value;
+          var invoiceAmount = Number(row.querySelector(".p-amount").value);
+          var paymentReceivedDate = row.querySelector(".p-received").value;
+          if (invoiceNo && invoiceDate && invoiceAmount && paymentReceivedDate) {
+            result.push({
+              invoiceNo: invoiceNo,
+              invoiceDate: invoiceDate,
+              invoiceAmount: invoiceAmount,
+              paymentReceivedDate: paymentReceivedDate,
+              rowId: row.dataset.rowId,
+            });
+          }
         }
         return result;
       }

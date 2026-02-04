@@ -1,18 +1,18 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { addBusinessDays } from "./business-days";
-import { fetchHolidaysForRange } from "./holidays";
-import { amountToWordsEN, amountToWordsUA } from "./number-to-words";
+import { addBusinessDays } from "./business-days.js";
+import { fetchHolidaysForRange } from "./holidays.js";
+import { amountToWordsEN, amountToWordsUA } from "./number-to-words.js";
 import {
   formatAmount,
   formatDate,
   generateInvoiceNumber,
   generateFileName,
-} from "./format";
-import { renderInvoiceHTML } from "./template";
-import { generatePDF } from "./pdf-generator";
-import { loadSupplierConfig, loadCustomerConfig } from "./config";
+} from "./format.js";
+import { renderInvoiceHTML } from "./template.js";
+import { generatePDF } from "./pdf-generator.js";
+import { loadSupplierConfig, loadCustomerConfig } from "./config.js";
 import { calculatePenalty } from "./penalty.js";
 import type { PenaltyInput, PenaltyResult } from "./penalty.js";
 
@@ -31,11 +31,21 @@ app.post("/api/generate", async (req, res) => {
     const { date, hours, rate, penalties: penaltyInputs = [] } = req.body;
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
+    const years = new Set<number>();
+    years.add(invoiceDate.getFullYear());
     const estimatedEndDate = new Date(invoiceDate);
     estimatedEndDate.setDate(estimatedEndDate.getDate() + 30);
+    years.add(estimatedEndDate.getFullYear());
+    for (const p of penaltyInputs) {
+      const pInvoiceDate = new Date(p.invoiceDate);
+      years.add(pInvoiceDate.getFullYear());
+      years.add(pInvoiceDate.getFullYear() + 1);
+      years.add(new Date(p.paymentReceivedDate).getFullYear());
+    }
+    const sortedYears = [...years].sort((a, b) => a - b);
     const holidays = await fetchHolidaysForRange(
-      invoiceDate.getFullYear(),
-      estimatedEndDate.getFullYear(),
+      sortedYears[0],
+      sortedYears[sortedYears.length - 1],
     );
     const paymentDueDate = addBusinessDays(invoiceDate, 20, holidays);
 
