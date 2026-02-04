@@ -21,6 +21,26 @@ describe("amountToWordsEN", () => {
       "four thousand eight hundred seventy-two euros"
     );
   });
+
+  it("converts amount with cents to words", () => {
+    expect(amountToWordsEN(5044.24)).toBe(
+      "five thousand forty-four euros and twenty-four cents"
+    );
+  });
+
+  it("converts small amount with cents to words", () => {
+    expect(amountToWordsEN(63.84)).toBe(
+      "sixty-three euros and eighty-four cents"
+    );
+  });
+
+  it("converts amount with one cent", () => {
+    expect(amountToWordsEN(100.01)).toBe("one hundred euros and one cent");
+  });
+
+  it("preserves whole number behavior", () => {
+    expect(amountToWordsEN(3360)).toBe("three thousand three hundred sixty euros");
+  });
 });
 
 describe("amountToWordsUA", () => {
@@ -58,5 +78,29 @@ describe("amountToWordsUA", () => {
 
   it("converts 10000 to words", () => {
     expect(amountToWordsUA(10000)).toBe("десять тисяч євро");
+  });
+
+  it("converts amount with cents to words", () => {
+    expect(amountToWordsUA(5044.24)).toBe(
+      "п'ять тисяч сорок чотири євро двадцять чотири центи"
+    );
+  });
+
+  it("converts small amount with cents to words", () => {
+    expect(amountToWordsUA(63.84)).toBe(
+      "шістдесят три євро вісімдесят чотири центи"
+    );
+  });
+
+  it("converts amount with one cent", () => {
+    expect(amountToWordsUA(100.01)).toBe("сто євро один цент");
+  });
+
+  it("converts amount with 5 cents", () => {
+    expect(amountToWordsUA(100.05)).toBe("сто євро п'ять центів");
+  });
+
+  it("preserves whole number behavior with cents", () => {
+    expect(amountToWordsUA(3360)).toBe("три тисячі триста шістдесят євро");
   });
 });
