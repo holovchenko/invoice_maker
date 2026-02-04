@@ -13,6 +13,8 @@ import {
 import { renderInvoiceHTML } from "./template";
 import { generatePDF } from "./pdf-generator";
 import { loadSupplierConfig, loadCustomerConfig } from "./config";
+import { calculatePenalty } from "./penalty.js";
+import type { PenaltyInput, PenaltyResult } from "./penalty.js";
 
 const supplierConfig = loadSupplierConfig();
 const customerConfig = loadCustomerConfig();
@@ -26,9 +28,9 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/generate", async (req, res) => {
   try {
-    const { date, hours, rate } = req.body;
+    const { date, hours, rate, penalties: penaltyInputs = [] } = req.body;
     const invoiceDate = new Date(date);
-    const totalAmount = hours * rate;
+    const serviceAmount = hours * rate;
     const estimatedEndDate = new Date(invoiceDate);
     estimatedEndDate.setDate(estimatedEndDate.getDate() + 30);
     const holidays = await fetchHolidaysForRange(
@@ -37,15 +39,34 @@ app.post("/api/generate", async (req, res) => {
     );
     const paymentDueDate = addBusinessDays(invoiceDate, 20, holidays);
 
+    const penaltyResults = penaltyInputs.map(
+      (p: PenaltyInput) => calculatePenalty(p, holidays),
+    );
+    const validPenalties = penaltyResults.filter(
+      (p: PenaltyResult) => p.delayDays > 0,
+    );
+
+    const penaltyTotal = validPenalties.reduce(
+      (sum: number, p: PenaltyResult) => sum + p.penaltyAmount,
+      0,
+    );
+    const grandTotal = Math.round((serviceAmount + penaltyTotal) * 100) / 100;
+
     const data = {
       invoiceNumber: generateInvoiceNumber(invoiceDate),
       invoiceDate: formatDate(invoiceDate),
       hours,
       rate,
-      totalAmount: formatAmount(totalAmount),
-      totalWordsEN: amountToWordsEN(totalAmount),
-      totalWordsUA: amountToWordsUA(totalAmount),
+      serviceAmount: formatAmount(serviceAmount),
+      totalAmount: formatAmount(grandTotal),
+      totalWordsEN: amountToWordsEN(grandTotal),
+      totalWordsUA: amountToWordsUA(grandTotal),
       paymentDueDate: formatDate(paymentDueDate),
+      penalties: validPenalties.map((p: PenaltyResult) => ({
+        invoiceNo: p.invoiceNo,
+        delayDays: p.delayDays,
+        penaltyAmount: formatAmount(p.penaltyAmount),
+      })),
     };
 
     const html = renderInvoiceHTML(data, supplierConfig, customerConfig);
@@ -60,6 +81,41 @@ app.post("/api/generate", async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=${actualFileName}`);
     res.sendFile(filePath);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/calculate-penalties", async (req, res) => {
+  try {
+    const { penalties: penaltyInputs = [] } = req.body;
+    const years = new Set<number>();
+    for (const p of penaltyInputs) {
+      const invoiceDate = new Date(p.invoiceDate);
+      years.add(invoiceDate.getFullYear());
+      years.add(invoiceDate.getFullYear() + 1);
+      const receivedDate = new Date(p.paymentReceivedDate);
+      years.add(receivedDate.getFullYear());
+    }
+    const sortedYears = [...years].sort((a, b) => a - b);
+    const holidays = sortedYears.length > 0
+      ? await fetchHolidaysForRange(sortedYears[0], sortedYears[sortedYears.length - 1])
+      : [];
+
+    const results = penaltyInputs.map((p: PenaltyInput) => {
+      const result = calculatePenalty(p, holidays);
+      return {
+        invoiceNo: result.invoiceNo,
+        dueDate: formatDate(result.dueDate),
+        actualPaymentDate: formatDate(result.actualPaymentDate),
+        delayDays: result.delayDays,
+        penaltyAmount: result.penaltyAmount,
+      };
+    });
+
+    res.json({ penalties: results });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown error";
