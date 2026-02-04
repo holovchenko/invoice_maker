@@ -18,6 +18,22 @@ describe("formatAmount", () => {
   it("formats 10000", () => {
     expect(formatAmount(10000)).toBe("10 000");
   });
+
+  it("formats amount with cents", () => {
+    expect(formatAmount(5044.24)).toBe("5 044.24");
+  });
+
+  it("formats small amount with cents", () => {
+    expect(formatAmount(63.84)).toBe("63.84");
+  });
+
+  it("omits cents when amount is whole number", () => {
+    expect(formatAmount(3360)).toBe("3 360");
+  });
+
+  it("formats amount with trailing zero cent", () => {
+    expect(formatAmount(100.10)).toBe("100.10");
+  });
 });
 
 describe("formatDate", () => {

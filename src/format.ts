@@ -4,7 +4,12 @@ const MONTH_NAMES = [
 ];
 
 export function formatAmount(amount: number): string {
-  return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const [intPart, decPart] = amount.toFixed(2).split(".");
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (decPart === "00") {
+    return formattedInt;
+  }
+  return `${formattedInt}.${decPart}`;
 }
 
 export function formatDate(date: Date): string {
