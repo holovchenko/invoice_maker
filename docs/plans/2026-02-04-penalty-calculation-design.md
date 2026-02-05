@@ -54,14 +54,14 @@ Penalty rows appear after the main service row in the table:
 | # | Description / Опис | Quantity | Price, EUR | Amount, EUR |
 |---|---|---|---|---|
 | 1 | IT services... | 168 | 20 | 3 360 |
-| 2 | Penalty for invoice 2025-11 / Пеня за інвойс 2025-11 | 19 days of delay | 63.84 | 63.84 |
-| 3 | Penalty for invoice 2025-12 / Пеня за інвойс 2025-12 | 12 days of delay | 40.32 | 40.32 |
+| 2 | Penalty for invoice 2025-11 / Пеня за інвойс 2025-11 `Due: 28.10.2025 \| Payment: 12.11.2025` | 19 days of delay | 63.84 | 63.84 |
+| 3 | Penalty for invoice 2025-12 / Пеня за інвойс 2025-12 `Due: 28.11.2025 \| Payment: 05.12.2025` | 12 days of delay | 40.32 | 40.32 |
 
 **Row format** (matches real invoice #17 pattern):
 - Sequential numbering (2, 3, 4...)
 - Quantity = `"{N} days of delay"` (informational text, not multiplied)
 - Price and Amount = same penalty amount
-- Description = bilingual: `"Penalty for invoice {No} / Пеня за інвойс {No}"`
+- Description = bilingual: `"Penalty for invoice {No} / Пеня за інвойс {No}"` + due date and payment date on the second line: `"Due: DD.MM.YYYY | Payment: DD.MM.YYYY"`
 
 **Total to pay** — grand total (services + penalties) in words EN and UA.
 **Payment due date** — calculated from current invoice date, as before.
@@ -88,7 +88,9 @@ Penalty rows appear after the main service row in the table:
 
 ### No changes needed
 
-`config.ts`, `format.ts`, `pdf-generator.ts`, `holidays.ts`
+`config.ts`, `pdf-generator.ts`, `holidays.ts`
+
+**Note:** `format.ts` was updated to support decimal amounts with `toFixed(2)`.
 
 ## Number-to-Words: Cents Support
 
@@ -110,3 +112,4 @@ fractional parts:
 | Received on Saturday/Sunday | Should not happen (bank closed), but subtract 1 business day as usual |
 | No penalty rows added | Invoice generated as currently, no changes |
 | Fractional main amount (hours × rate) | Unlikely with integer hours/rate, but supported at number-to-words level |
+| Hours = 0 and Rate = 0 (penalty-only) | Service row hidden, invoice number gets `-01` suffix (e.g. `2026-02-01`), penalty numbering starts at 1 |
