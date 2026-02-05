@@ -4,3 +4,4 @@ output/*.pdf
 config/supplier.json
 config/customer.json
 .worktrees/
+.DS_Store

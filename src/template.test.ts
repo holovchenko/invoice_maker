@@ -206,8 +206,8 @@ describe("renderInvoiceHTML", () => {
 
   it("renders penalty rows in items table", () => {
     const penalties: ReadonlyArray<PenaltyRow> = [
-      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
-      { invoiceNo: "2025-12", delayDays: 12, penaltyAmount: "40.32" },
+      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
+      { invoiceNo: "2025-12", delayDays: 12, penaltyAmount: "40.32", dueDate: "28.11.2025", actualPaymentDate: "05.12.2025" },
     ];
     const data: InvoiceData = {
       ...SAMPLE_DATA,
@@ -220,16 +220,18 @@ describe("renderInvoiceHTML", () => {
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
 
     expect(html).toContain("Penalty for invoice 2025-11 / Пеня за інвойс 2025-11");
+    expect(html).toContain("Due: 28.10.2025 | Payment: 12.11.2025");
     expect(html).toContain("19 days of delay");
     expect(html).toContain("63.84");
     expect(html).toContain("Penalty for invoice 2025-12 / Пеня за інвойс 2025-12");
+    expect(html).toContain("Due: 28.11.2025 | Payment: 05.12.2025");
     expect(html).toContain("12 days of delay");
     expect(html).toContain("40.32");
   });
 
   it("renders sequential row numbers for penalties", () => {
     const penalties: ReadonlyArray<PenaltyRow> = [
-      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+      { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
     ];
     const data: InvoiceData = { ...SAMPLE_DATA, penalties };
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
@@ -245,7 +247,7 @@ describe("renderInvoiceHTML", () => {
       serviceAmount: "3 360",
       totalAmount: "3 423.84",
       penalties: [
-        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
       ],
     };
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
@@ -272,7 +274,7 @@ describe("renderInvoiceHTML", () => {
       serviceAmount: "0",
       totalAmount: "63.84",
       penalties: [
-        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
       ],
     };
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
@@ -292,7 +294,7 @@ describe("renderInvoiceHTML", () => {
       serviceAmount: "0",
       totalAmount: "63.84",
       penalties: [
-        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84" },
+        { invoiceNo: "2025-11", delayDays: 19, penaltyAmount: "63.84", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
       ],
     };
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
@@ -303,7 +305,7 @@ describe("renderInvoiceHTML", () => {
 
   it("escapes penalty invoiceNo to prevent XSS", () => {
     const penalties: ReadonlyArray<PenaltyRow> = [
-      { invoiceNo: "<script>alert(1)</script>", delayDays: 5, penaltyAmount: "10.00" },
+      { invoiceNo: "<script>alert(1)</script>", delayDays: 5, penaltyAmount: "10.00", dueDate: "28.10.2025", actualPaymentDate: "12.11.2025" },
     ];
     const data: InvoiceData = { ...SAMPLE_DATA, penalties };
     const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);

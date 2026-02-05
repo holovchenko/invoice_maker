@@ -76,6 +76,8 @@ app.post("/api/generate", async (req, res) => {
         invoiceNo: p.invoiceNo,
         delayDays: p.delayDays,
         penaltyAmount: formatAmount(p.penaltyAmount),
+        dueDate: formatDate(p.dueDate),
+        actualPaymentDate: formatDate(p.actualPaymentDate),
       })),
     };
 

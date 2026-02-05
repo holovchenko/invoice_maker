@@ -58,13 +58,13 @@ describe("generateInvoiceNumber", () => {
 
 describe("generateFileName", () => {
   it("generates filename with provided surname and customerShort", () => {
-    expect(generateFileName(new Date(2026, 0, 31), "Doe", "Hub")).toBe(
+    expect(generateFileName(new Date(2026, 0, 31), "Doe", "Client")).toBe(
       "Doe_Invoice_Jan_Client_2026.pdf"
     );
   });
 
   it("generates filename for December 2025", () => {
-    expect(generateFileName(new Date(2025, 11, 31), "Doe", "Hub")).toBe(
+    expect(generateFileName(new Date(2025, 11, 31), "Doe", "Client")).toBe(
       "Doe_Invoice_Dec_Client_2025.pdf"
     );
   });

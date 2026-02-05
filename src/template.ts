@@ -4,6 +4,8 @@ export interface PenaltyRow {
   readonly invoiceNo: string;
   readonly delayDays: number;
   readonly penaltyAmount: string;
+  readonly dueDate: string;
+  readonly actualPaymentDate: string;
 }
 
 export interface InvoiceData {
@@ -288,7 +290,7 @@ ${d.hours > 0 ? `    <tr>
     </tr>` : ""}
 ${data.penalties.map((p, i) => `    <tr>
       <td>${i + (d.hours > 0 ? 2 : 1)}</td>
-      <td>Penalty for invoice ${escapeHTML(p.invoiceNo)} / Пеня за інвойс ${escapeHTML(p.invoiceNo)}</td>
+      <td>Penalty for invoice ${escapeHTML(p.invoiceNo)} / Пеня за інвойс ${escapeHTML(p.invoiceNo)}<br>Due: ${escapeHTML(p.dueDate)} | Payment: ${escapeHTML(p.actualPaymentDate)}</td>
       <td>${p.delayDays} days of delay</td>
       <td>${escapeHTML(p.penaltyAmount)}</td>
       <td>${escapeHTML(p.penaltyAmount)}</td>
