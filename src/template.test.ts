@@ -6,7 +6,7 @@ const SAMPLE_DATA: InvoiceData = {
   invoiceNumber: "2025-12",
   invoiceDate: "31.12.2025",
   hours: 178,
-  rate: 29,
+  rate: "29",
   serviceAmount: "5 162",
   totalAmount: "5 162",
   totalWordsEN: "five thousand one hundred sixty-two euros",
@@ -270,7 +270,7 @@ describe("renderInvoiceHTML", () => {
     const data: InvoiceData = {
       ...SAMPLE_DATA,
       hours: 0,
-      rate: 0,
+      rate: "0",
       serviceAmount: "0",
       totalAmount: "63.84",
       penalties: [
@@ -290,7 +290,7 @@ describe("renderInvoiceHTML", () => {
     const data: InvoiceData = {
       ...SAMPLE_DATA,
       hours: 0,
-      rate: 0,
+      rate: "0",
       serviceAmount: "0",
       totalAmount: "63.84",
       penalties: [

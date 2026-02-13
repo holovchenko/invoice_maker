@@ -66,7 +66,7 @@ app.post("/api/generate", async (req, res) => {
       invoiceNumber: generateInvoiceNumber(invoiceDate) + (serviceAmount === 0 ? "-01" : ""),
       invoiceDate: formatDate(invoiceDate),
       hours,
-      rate,
+      rate: formatAmount(rate),
       serviceAmount: formatAmount(serviceAmount),
       totalAmount: formatAmount(grandTotal),
       totalWordsEN: amountToWordsEN(grandTotal),

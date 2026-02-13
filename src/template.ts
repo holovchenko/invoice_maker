@@ -12,7 +12,7 @@ export interface InvoiceData {
   readonly invoiceNumber: string;
   readonly invoiceDate: string;
   readonly hours: number;
-  readonly rate: number;
+  readonly rate: string;
   readonly serviceAmount: string;
   readonly totalAmount: string;
   readonly totalWordsEN: string;
