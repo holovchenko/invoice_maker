@@ -7,9 +7,9 @@ import { amountToWordsEN, amountToWordsUA } from "./number-to-words.js";
 import {
   formatAmount,
   formatDate,
-  generateInvoiceNumber,
   generateFileName,
 } from "./format.js";
+import { nextInvoiceNumber } from "./counter.js";
 import { renderInvoiceHTML } from "./template.js";
 import { generatePDF } from "./pdf-generator.js";
 import { loadSupplierConfig, loadCustomerConfig } from "./config.js";
@@ -63,7 +63,7 @@ app.post("/api/generate", async (req, res) => {
     const grandTotal = Math.round((serviceAmount + penaltyTotal) * 100) / 100;
 
     const data = {
-      invoiceNumber: generateInvoiceNumber(invoiceDate) + (serviceAmount === 0 ? "-01" : ""),
+      invoiceNumber: nextInvoiceNumber(),
       invoiceDate: formatDate(invoiceDate),
       hours,
       rate: formatAmount(rate),

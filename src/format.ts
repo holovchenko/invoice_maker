@@ -19,11 +19,6 @@ export function formatDate(date: Date): string {
   return `${day}.${month}.${year}`;
 }
 
-export function generateInvoiceNumber(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${date.getFullYear()}-${month}`;
-}
-
 export function generateFileName(
   date: Date,
   surname: string,
