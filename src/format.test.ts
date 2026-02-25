@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   formatAmount,
   formatDate,
-  generateInvoiceNumber,
   generateFileName,
 } from "./format";
 
@@ -43,16 +42,6 @@ describe("formatDate", () => {
 
   it("pads single digits", () => {
     expect(formatDate(new Date(2026, 2, 5))).toBe("05.03.2026");
-  });
-});
-
-describe("generateInvoiceNumber", () => {
-  it("generates YYYY-MM from date", () => {
-    expect(generateInvoiceNumber(new Date(2026, 0, 15))).toBe("2026-01");
-  });
-
-  it("generates for December", () => {
-    expect(generateInvoiceNumber(new Date(2025, 11, 31))).toBe("2025-12");
   });
 });
 

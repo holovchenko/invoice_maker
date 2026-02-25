@@ -3,5 +3,6 @@ dist/
 output/*.pdf
 config/supplier.json
 config/customer.json
+config/counter.json
 .worktrees/
 .DS_Store

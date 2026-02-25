@@ -3,7 +3,7 @@ import { renderInvoiceHTML, InvoiceData, PenaltyRow } from "./template.js";
 import type { SupplierConfig, CustomerConfig } from "./config.js";
 
 const SAMPLE_DATA: InvoiceData = {
-  invoiceNumber: "2025-12",
+  invoiceNumber: "1",
   invoiceDate: "31.12.2025",
   hours: 178,
   rate: "29",
@@ -58,7 +58,7 @@ describe("renderInvoiceHTML", () => {
 
   it("includes the invoice number in the header", () => {
     const html = renderInvoiceHTML(SAMPLE_DATA, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
-    expect(html).toContain("Invoice (offer) / Інвойс (оферта) № 2025-12");
+    expect(html).toContain("Invoice (offer) / Інвойс (оферта) № 1");
   });
 
   it("includes date and place in both languages", () => {
@@ -175,9 +175,9 @@ describe("renderInvoiceHTML", () => {
 
   it("produces different output for different invoice numbers", () => {
     const html1 = renderInvoiceHTML(SAMPLE_DATA, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
-    const html2 = renderInvoiceHTML({ ...SAMPLE_DATA, invoiceNumber: "2026-01" }, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+    const html2 = renderInvoiceHTML({ ...SAMPLE_DATA, invoiceNumber: "2" }, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
     expect(html1).not.toBe(html2);
-    expect(html2).toContain("2026-01");
+    expect(html2).toContain("№ 2");
   });
 
   it("uses different supplier when config changes", () => {
