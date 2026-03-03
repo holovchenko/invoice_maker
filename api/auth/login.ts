@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Resend } from "resend";
 import { createMagicLinkToken } from "../../src/auth.js";
-import { kvGet, kvSet } from "../../src/kv.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
