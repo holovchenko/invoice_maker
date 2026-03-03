@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 
 export const NAGER_API_BASE = "https://date.nager.at/api/v3/publicholidays";
 
@@ -11,7 +10,6 @@ interface NagerHoliday {
 }
 
 function getConfigDir(): string {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(__dirname, "..", "config");
 }
 
