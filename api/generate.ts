@@ -22,7 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { date, hours, rate, invoiceNumber: customInvoiceNumber, penalties: penaltyInputs = [] } = req.body;
+    // Support both JSON and form-encoded bodies
+    const requestBody = req.body._json ? JSON.parse(req.body._json) : req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, penalties: penaltyInputs = [] } = requestBody;
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
 
