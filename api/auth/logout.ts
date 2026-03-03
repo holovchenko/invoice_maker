@@ -13,6 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await deleteSession(sessionToken);
   }
 
-  res.setHeader("Set-Cookie", "session=; Path=/; HttpOnly; Max-Age=0");
+  res.setHeader("Set-Cookie", "session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0");
   return res.status(200).json({ ok: true });
 }

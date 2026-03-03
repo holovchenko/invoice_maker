@@ -1,5 +1,13 @@
-import type { VercelRequest } from "@vercel/node";
-import { getSessionEmail } from "./auth.js";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { getSessionEmail, SESSION_TTL_SECONDS } from "./auth.js";
+
+export function setSessionCookie(res: VercelResponse, token: string): void {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  res.setHeader(
+    "Set-Cookie",
+    `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${secure}`,
+  );
+}
 
 export function parseCookies(req: VercelRequest): Record<string, string> {
   const header = req.headers.cookie || "";

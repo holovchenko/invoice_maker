@@ -8,41 +8,86 @@ vi.mock("./kv.js", () => ({
 
 import { kvGet, kvSet, kvDel } from "./kv.js";
 import {
-  createMagicLinkToken,
-  verifyMagicLinkToken,
+  registerUser,
+  verifyPassword,
   createSession,
   getSessionEmail,
   deleteSession,
 } from "./auth.js";
 
-// Set JWT_SECRET for tests
-process.env.JWT_SECRET = "test-secret-key";
-
-describe("magic link tokens", () => {
-  it("creates a valid JWT with email", () => {
-    const token = createMagicLinkToken("user@example.com");
-    expect(typeof token).toBe("string");
-    expect(token.split(".")).toHaveLength(3);
+describe("registerUser", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("verifies a valid token and returns email", () => {
-    const token = createMagicLinkToken("user@example.com");
-    const email = verifyMagicLinkToken(token);
-    expect(email).toBe("user@example.com");
+  it("registers a new user and stores password hash", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    const result = await registerUser("user@example.com", "password123");
+    expect(result).toBe(true);
+    expect(kvSet).toHaveBeenCalledWith(
+      "user:user@example.com",
+      expect.objectContaining({
+        passwordHash: expect.any(String),
+        createdAt: expect.any(String),
+      }),
+    );
+    const storedUser = vi.mocked(kvSet).mock.calls[0][1] as { passwordHash: string };
+    expect(storedUser.passwordHash).not.toBe("password123");
+    expect(storedUser.passwordHash.startsWith("$2")).toBe(true);
   });
 
-  it("returns null for invalid token", () => {
-    const email = verifyMagicLinkToken("garbage.token.here");
-    expect(email).toBeNull();
+  it("returns false for duplicate email", async () => {
+    vi.mocked(kvGet).mockResolvedValue({ passwordHash: "existing", createdAt: "2024-01-01" });
+    const result = await registerUser("user@example.com", "password123");
+    expect(result).toBe(false);
+    expect(kvSet).not.toHaveBeenCalled();
   });
 
-  it("returns null for expired token", () => {
-    const realDateNow = Date.now;
-    Date.now = () => new Date("2020-01-01").getTime();
-    const token = createMagicLinkToken("user@example.com");
-    Date.now = realDateNow;
-    const email = verifyMagicLinkToken(token);
-    expect(email).toBeNull();
+  it("throws for password shorter than 8 characters", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    await expect(registerUser("user@example.com", "short")).rejects.toThrow(
+      "Password must be at least 8 characters",
+    );
+    expect(kvSet).not.toHaveBeenCalled();
+  });
+
+  it("normalizes email to lowercase", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    await registerUser("User@Example.COM", "password123");
+    expect(kvGet).toHaveBeenCalledWith("user:user@example.com");
+    expect(kvSet).toHaveBeenCalledWith(
+      "user:user@example.com",
+      expect.any(Object),
+    );
+  });
+});
+
+describe("verifyPassword", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns true for correct password", async () => {
+    // Use real bcrypt to create a hash for testing
+    const bcrypt = await import("bcryptjs");
+    const hash = await bcrypt.hash("correct-password", 10);
+    vi.mocked(kvGet).mockResolvedValue({ passwordHash: hash, createdAt: "2024-01-01" });
+    const result = await verifyPassword("user@example.com", "correct-password");
+    expect(result).toBe(true);
+  });
+
+  it("returns false for wrong password", async () => {
+    const bcrypt = await import("bcryptjs");
+    const hash = await bcrypt.hash("correct-password", 10);
+    vi.mocked(kvGet).mockResolvedValue({ passwordHash: hash, createdAt: "2024-01-01" });
+    const result = await verifyPassword("user@example.com", "wrong-password");
+    expect(result).toBe(false);
+  });
+
+  it("returns false for non-existent user", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    const result = await verifyPassword("nobody@example.com", "password");
+    expect(result).toBe(false);
   });
 });
 
@@ -63,7 +108,7 @@ describe("sessions", () => {
   });
 
   it("getSessionEmail returns email for valid session", async () => {
-    vi.mocked(kvGet).mockResolvedValue({ email: "user@example.com", expiresAt: Date.now() + 100000 });
+    vi.mocked(kvGet).mockResolvedValue({ email: "user@example.com" });
     const email = await getSessionEmail("valid-token");
     expect(email).toBe("user@example.com");
     expect(kvGet).toHaveBeenCalledWith("session:valid-token");

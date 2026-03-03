@@ -1,40 +1,49 @@
-import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { kvGet, kvSet, kvDel } from "./kv.js";
 
-const MAGIC_LINK_EXPIRY = "15m";
-const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+const BCRYPT_ROUNDS = 10;
+const MIN_PASSWORD_LENGTH = 8;
 
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error("JWT_SECRET env var is required");
-  return secret;
-}
-
-export function createMagicLinkToken(email: string): string {
-  return jwt.sign({ email }, getJwtSecret(), { expiresIn: MAGIC_LINK_EXPIRY });
-}
-
-export function verifyMagicLinkToken(token: string): string | null {
-  try {
-    const payload = jwt.verify(token, getJwtSecret()) as { email: string };
-    return payload.email;
-  } catch {
-    return null;
-  }
+interface UserRecord {
+  passwordHash: string;
+  createdAt: string;
 }
 
 interface SessionData {
   email: string;
-  expiresAt: number;
+}
+
+export async function registerUser(email: string, password: string): Promise<boolean> {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error("Password must be at least 8 characters");
+  }
+  const normalizedEmail = email.toLowerCase().trim();
+  const userKey = `user:${normalizedEmail}`;
+  const existing = await kvGet<UserRecord>(userKey);
+  if (existing) return false;
+
+  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  const user: UserRecord = {
+    passwordHash,
+    createdAt: new Date().toISOString(),
+  };
+  await kvSet(userKey, user);
+  return true;
+}
+
+export async function verifyPassword(email: string, password: string): Promise<boolean> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const userKey = `user:${normalizedEmail}`;
+  const user = await kvGet<UserRecord>(userKey);
+  if (!user) return false;
+  return bcrypt.compare(password, user.passwordHash);
 }
 
 export async function createSession(email: string): Promise<string> {
   const token = randomBytes(32).toString("hex");
-  const session: SessionData = {
-    email,
-    expiresAt: Date.now() + SESSION_TTL_SECONDS * 1000,
-  };
+  const session: SessionData = { email };
   await kvSet(`session:${token}`, session, SESSION_TTL_SECONDS);
   return token;
 }

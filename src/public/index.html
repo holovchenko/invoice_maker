@@ -103,13 +103,6 @@
       text-align: center;
     }
 
-    .success {
-      color: #5cb85c;
-      font-size: 0.875rem;
-      margin-top: 0.75rem;
-      text-align: center;
-    }
-
     .auth-header {
       display: flex;
       justify-content: flex-end;
@@ -228,12 +221,16 @@
     <!-- Login View -->
     <div id="login-view" style="display:none;">
       <h1>Invoice Maker</h1>
-      <p style="text-align:center; margin-bottom:1.5rem; color:#666;">Enter your email to receive a login link</p>
+      <p id="login-subtitle" style="text-align:center; margin-bottom:1.5rem; color:#666;">Log in to your account</p>
       <label for="login-email">Email</label>
       <input type="email" id="login-email" placeholder="you@example.com" required>
-      <button id="login-btn" type="button">Send magic link</button>
-      <p id="login-message" class="success" style="display:none;"></p>
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" required>
+      <button id="login-btn" type="button">Log in</button>
       <p id="login-error" class="error" style="display:none;"></p>
+      <p style="text-align:center; margin-top:1rem; font-size:0.875rem;">
+        <a id="toggle-auth-link" href="#" style="color:#4a90d9;">Don't have an account? Register</a>
+      </p>
     </div>
 
     <!-- App View (authenticated) -->
@@ -362,26 +359,54 @@
         }
       }
 
-      // === Login ===
-      document.getElementById("login-btn").addEventListener("click", async function () {
+      // === Login / Register ===
+      var isRegisterMode = false;
+      var loginBtn = document.getElementById("login-btn");
+      var toggleLink = document.getElementById("toggle-auth-link");
+      var loginSubtitle = document.getElementById("login-subtitle");
+
+      var passwordInput = document.getElementById("login-password");
+
+      toggleLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        if (isRegisterMode) {
+          loginBtn.textContent = "Register";
+          loginSubtitle.textContent = "Create a new account";
+          toggleLink.textContent = "Already have an account? Log in";
+          passwordInput.placeholder = "Min 8 characters";
+          passwordInput.minLength = 8;
+        } else {
+          loginBtn.textContent = "Log in";
+          loginSubtitle.textContent = "Log in to your account";
+          toggleLink.textContent = "Don't have an account? Register";
+          passwordInput.placeholder = "";
+          passwordInput.removeAttribute("minlength");
+        }
+        document.getElementById("login-error").style.display = "none";
+      });
+
+      loginBtn.addEventListener("click", async function () {
         var email = document.getElementById("login-email").value;
-        if (!email) return;
+        var password = document.getElementById("login-password").value;
+        if (!email || !password) return;
         this.disabled = true;
+        document.getElementById("login-error").style.display = "none";
         try {
-          var resp = await fetch("/api/auth/login", {
+          var endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+          var resp = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: email }),
+            body: JSON.stringify({ email: email, password: password }),
           });
           if (resp.ok) {
-            document.getElementById("login-message").textContent = "Check your email for the login link!";
-            document.getElementById("login-message").style.display = "block";
-            document.getElementById("login-error").style.display = "none";
+            checkAuth();
           } else {
-            throw new Error("Failed to send");
+            var data = await resp.json();
+            throw new Error(data.error || "Authentication failed");
           }
-        } catch {
-          document.getElementById("login-error").textContent = "Failed to send login link. Try again.";
+        } catch (err) {
+          document.getElementById("login-error").textContent = err.message;
           document.getElementById("login-error").style.display = "block";
         } finally {
           this.disabled = false;
