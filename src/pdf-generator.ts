@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
 import path from "path";
 import fs from "fs";
 
@@ -18,6 +18,38 @@ function getUniqueFilePath(dir: string, fileName: string): string {
   return filePath;
 }
 
+async function getBrowser() {
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL) {
+    const chromium = await import("@sparticuz/chromium");
+    return puppeteerCore.launch({
+      args: chromium.default.args,
+      defaultViewport: chromium.default.defaultViewport,
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    });
+  }
+  // Local dev: use puppeteer's bundled Chromium
+  const localPuppeteer = await import("puppeteer");
+  return localPuppeteer.default.launch({ headless: true });
+}
+
+export async function generatePDFBuffer(html: string): Promise<Buffer> {
+  const browser = await getBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
+}
+
+/** @deprecated Use generatePDFBuffer for Vercel. Kept for local CLI usage. */
 export async function generatePDF(
   html: string,
   fileName: string
@@ -27,7 +59,7 @@ export async function generatePDF(
   }
 
   const filePath = getUniqueFilePath(OUTPUT_DIR, fileName);
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await getBrowser();
 
   try {
     const page = await browser.newPage();
