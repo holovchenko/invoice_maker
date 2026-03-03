@@ -38,6 +38,20 @@
       font-weight: 600;
     }
 
+    h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    h3 {
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
     label {
       display: block;
       margin-bottom: 0.35rem;
@@ -87,6 +101,65 @@
       font-size: 0.875rem;
       margin-top: 0.75rem;
       text-align: center;
+    }
+
+    .success {
+      color: #5cb85c;
+      font-size: 0.875rem;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+
+    .auth-header {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .auth-header span {
+      color: #666;
+    }
+
+    .auth-header a {
+      color: #4a90d9;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .auth-header a:hover {
+      text-decoration: underline;
+    }
+
+    .auth-header button {
+      width: auto;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.8rem;
+      background: #888;
+    }
+
+    .auth-header button:hover {
+      background: #666;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-row button {
+      flex: 1;
+    }
+
+    .btn-secondary {
+      background: #888;
+    }
+
+    .btn-secondary:hover {
+      background: #666;
     }
 
     .penalties-section {
@@ -152,36 +225,272 @@
 </head>
 <body>
   <div class="container">
-    <h1>Invoice Maker</h1>
-    <form id="invoice-form">
-      <label for="date">Invoice date</label>
-      <input type="date" id="date" name="date" required>
+    <!-- Login View -->
+    <div id="login-view" style="display:none;">
+      <h1>Invoice Maker</h1>
+      <p style="text-align:center; margin-bottom:1.5rem; color:#666;">Enter your email to receive a login link</p>
+      <label for="login-email">Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" required>
+      <button id="login-btn" type="button">Send magic link</button>
+      <p id="login-message" class="success" style="display:none;"></p>
+      <p id="login-error" class="error" style="display:none;"></p>
+    </div>
 
-      <label for="hours">Hours</label>
-      <input type="number" id="hours" name="hours" value="168" min="0" required>
-
-      <label for="rate">Hourly rate EUR</label>
-      <input type="number" id="rate" name="rate" value="20" min="0" step="0.01" required>
-
-      <div class="penalties-section">
-        <div class="penalties-header">
-          <label>Penalties</label>
-          <button type="button" id="add-penalty-btn">+ Add Penalty</button>
-        </div>
-        <div id="penalty-rows"></div>
+    <!-- App View (authenticated) -->
+    <div id="app-view" style="display:none;">
+      <div class="auth-header">
+        <span id="user-email"></span>
+        <a id="settings-link">Settings</a>
+        <button id="logout-btn" type="button">Logout</button>
       </div>
 
-      <button type="submit" id="submit-btn">Generate PDF</button>
-      <div id="error-msg" class="error"></div>
-    </form>
+      <!-- Settings View -->
+      <div id="settings-view" style="display:none;">
+        <h2>Supplier Settings</h2>
+
+        <label for="s-nameEN">Name (EN)</label>
+        <input type="text" id="s-nameEN" required>
+
+        <label for="s-nameUA">Name (UA)</label>
+        <input type="text" id="s-nameUA" required>
+
+        <label for="s-addressEN">Address (EN)</label>
+        <input type="text" id="s-addressEN" required>
+
+        <label for="s-addressUA">Address (UA)</label>
+        <input type="text" id="s-addressUA" required>
+
+        <label for="s-registrationCode">Registration Code</label>
+        <input type="text" id="s-registrationCode" required>
+
+        <label for="s-signatureEN">Signature (EN)</label>
+        <input type="text" id="s-signatureEN" required>
+
+        <label for="s-signatureUA">Signature (UA)</label>
+        <input type="text" id="s-signatureUA" required>
+
+        <h3>Bank Details</h3>
+        <label for="s-bankBeneficiary">Beneficiary</label>
+        <input type="text" id="s-bankBeneficiary" required>
+
+        <label for="s-bankSepa">SEPA/IBAN</label>
+        <input type="text" id="s-bankSepa" required>
+
+        <label for="s-bankBic">BIC/SWIFT</label>
+        <input type="text" id="s-bankBic" required>
+
+        <label for="s-bankReceiver">Receiver Bank</label>
+        <input type="text" id="s-bankReceiver" required>
+
+        <h3>File Naming</h3>
+        <label for="s-surname">Surname (for filename)</label>
+        <input type="text" id="s-surname" required>
+
+        <label for="s-customerShort">Customer Short Name (for filename)</label>
+        <input type="text" id="s-customerShort" required>
+
+        <div class="btn-row">
+          <button id="save-settings-btn" type="button">Save Settings</button>
+          <button id="back-to-invoice-btn" type="button" class="btn-secondary">Back</button>
+        </div>
+        <p id="settings-message" style="display:none; text-align:center; margin-top:0.75rem;"></p>
+      </div>
+
+      <!-- Invoice View -->
+      <div id="invoice-view" style="display:none;">
+        <h1>Invoice Maker</h1>
+        <form id="invoice-form">
+          <label for="invoiceNumber">Invoice Number</label>
+          <input type="text" id="invoiceNumber" name="invoiceNumber" placeholder="Auto">
+
+          <label for="date">Invoice date</label>
+          <input type="date" id="date" name="date" required>
+
+          <label for="hours">Hours</label>
+          <input type="number" id="hours" name="hours" value="168" min="0" step="any" required>
+
+          <label for="rate">Hourly rate EUR</label>
+          <input type="number" id="rate" name="rate" value="20" min="0" step="0.01" required>
+
+          <div class="penalties-section">
+            <div class="penalties-header">
+              <label>Penalties</label>
+              <button type="button" id="add-penalty-btn">+ Add Penalty</button>
+            </div>
+            <div id="penalty-rows"></div>
+          </div>
+
+          <button type="submit" id="submit-btn">Generate PDF</button>
+          <div id="error-msg" class="error"></div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script>
     (function () {
+      // === Auth State ===
+      async function checkAuth() {
+        try {
+          var resp = await fetch("/api/auth/me");
+          if (resp.ok) {
+            var data = await resp.json();
+            showApp(data.email);
+          } else {
+            showLogin();
+          }
+        } catch {
+          showLogin();
+        }
+      }
+
+      function showLogin() {
+        document.getElementById("login-view").style.display = "block";
+        document.getElementById("app-view").style.display = "none";
+      }
+
+      async function showApp(email) {
+        document.getElementById("login-view").style.display = "none";
+        document.getElementById("app-view").style.display = "block";
+        document.getElementById("user-email").textContent = email;
+
+        var settings = await loadSettings();
+        if (!settings) {
+          showSettings();
+        } else {
+          showInvoiceForm();
+        }
+      }
+
+      // === Login ===
+      document.getElementById("login-btn").addEventListener("click", async function () {
+        var email = document.getElementById("login-email").value;
+        if (!email) return;
+        this.disabled = true;
+        try {
+          var resp = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          });
+          if (resp.ok) {
+            document.getElementById("login-message").textContent = "Check your email for the login link!";
+            document.getElementById("login-message").style.display = "block";
+            document.getElementById("login-error").style.display = "none";
+          } else {
+            throw new Error("Failed to send");
+          }
+        } catch {
+          document.getElementById("login-error").textContent = "Failed to send login link. Try again.";
+          document.getElementById("login-error").style.display = "block";
+        } finally {
+          this.disabled = false;
+        }
+      });
+
+      document.getElementById("logout-btn").addEventListener("click", async function () {
+        await fetch("/api/auth/logout", { method: "POST" });
+        showLogin();
+      });
+
+      // === Settings ===
+      var settingsFields = [
+        "nameEN", "nameUA", "addressEN", "addressUA", "registrationCode",
+        "signatureEN", "signatureUA", "surname", "customerShort",
+      ];
+
+      async function loadSettings() {
+        try {
+          var resp = await fetch("/api/settings");
+          if (!resp.ok) return null;
+          var data = await resp.json();
+          if (!data) return null;
+          settingsFields.forEach(function (f) {
+            var el = document.getElementById("s-" + f);
+            if (el && data[f]) el.value = data[f];
+          });
+          if (data.bank) {
+            document.getElementById("s-bankBeneficiary").value = data.bank.beneficiary || "";
+            document.getElementById("s-bankSepa").value = data.bank.sepa || "";
+            document.getElementById("s-bankBic").value = data.bank.bic || "";
+            document.getElementById("s-bankReceiver").value = data.bank.receiver || "";
+          }
+          return data;
+        } catch {
+          return null;
+        }
+      }
+
+      function collectSettings() {
+        var obj = {};
+        settingsFields.forEach(function (f) {
+          obj[f] = document.getElementById("s-" + f).value;
+        });
+        obj.bank = {
+          beneficiary: document.getElementById("s-bankBeneficiary").value,
+          sepa: document.getElementById("s-bankSepa").value,
+          bic: document.getElementById("s-bankBic").value,
+          receiver: document.getElementById("s-bankReceiver").value,
+        };
+        return obj;
+      }
+
+      document.getElementById("save-settings-btn").addEventListener("click", async function () {
+        var settings = collectSettings();
+        var resp = await fetch("/api/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(settings),
+        });
+        var msg = document.getElementById("settings-message");
+        if (resp.ok) {
+          msg.textContent = "Settings saved!";
+          msg.style.color = "#5cb85c";
+        } else {
+          msg.textContent = "Failed to save settings.";
+          msg.style.color = "#d9534f";
+        }
+        msg.style.display = "block";
+      });
+
+      document.getElementById("settings-link").addEventListener("click", function (e) {
+        e.preventDefault();
+        showSettings();
+      });
+
+      document.getElementById("back-to-invoice-btn").addEventListener("click", function () {
+        showInvoiceForm();
+      });
+
+      function showSettings() {
+        document.getElementById("settings-view").style.display = "block";
+        document.getElementById("invoice-view").style.display = "none";
+        loadSettings();
+      }
+
+      function showInvoiceForm() {
+        document.getElementById("settings-view").style.display = "none";
+        document.getElementById("invoice-view").style.display = "block";
+        loadNextInvoiceNumber();
+      }
+
+      // === Invoice Number ===
+      async function loadNextInvoiceNumber() {
+        try {
+          var resp = await fetch("/api/counter");
+          if (resp.ok) {
+            var data = await resp.json();
+            document.getElementById("invoiceNumber").placeholder = data.next;
+          }
+        } catch {}
+      }
+
+      // === Invoice Form ===
       var form = document.getElementById("invoice-form");
       var dateInput = document.getElementById("date");
       var hoursInput = document.getElementById("hours");
       var rateInput = document.getElementById("rate");
+      var invoiceNumberInput = document.getElementById("invoiceNumber");
       var submitBtn = document.getElementById("submit-btn");
       var errorMsg = document.getElementById("error-msg");
       var addPenaltyBtn = document.getElementById("add-penalty-btn");
@@ -279,7 +588,7 @@
               preview.textContent = "Due: " + p.dueDate +
                 " | Payment: " + p.actualPaymentDate +
                 " | Delay: " + p.delayDays + " days" +
-                " | Penalty: " + p.penaltyAmount.toFixed(2) + " EUR";
+                " | Penalty: " + p.penaltyAmount + " EUR";
             }
           });
         } catch (e) {
@@ -296,15 +605,20 @@
         submitBtn.textContent = "Generating...";
 
         try {
+          var body = {
+            date: dateInput.value,
+            hours: Number(hoursInput.value),
+            rate: Number(rateInput.value),
+            penalties: getPenaltyInputs(),
+          };
+          if (invoiceNumberInput.value.trim()) {
+            body.invoiceNumber = invoiceNumberInput.value.trim();
+          }
+
           var response = await fetch("/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              date: dateInput.value,
-              hours: Number(hoursInput.value),
-              rate: Number(rateInput.value),
-              penalties: getPenaltyInputs(),
-            }),
+            body: JSON.stringify(body),
           });
 
           if (!response.ok) {
@@ -316,8 +630,9 @@
           var url = window.URL.createObjectURL(blob);
           var a = document.createElement("a");
           a.href = url;
-          a.download = response.headers.get("Content-Disposition")
-            ? response.headers.get("Content-Disposition").split("filename=")[1]
+          var disposition = response.headers.get("Content-Disposition");
+          a.download = disposition
+            ? disposition.split("filename=")[1].replace(/"/g, "")
             : "invoice.pdf";
           document.body.appendChild(a);
           a.click();
@@ -330,6 +645,9 @@
           submitBtn.textContent = "Generate PDF";
         }
       });
+
+      // === Init ===
+      checkAuth();
     })();
   </script>
 </body>
