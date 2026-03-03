@@ -8,6 +8,7 @@
     "example": "examples"
   },
   "scripts": {
+    "dev": "vercel dev",
     "start": "tsx src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -17,15 +18,23 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
+    "@vercel/kv": "^3.0.0",
+    "@vercel/node": "^5.6.10",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "number-to-words": "^1.2.4",
-    "puppeteer": "^24.36.1"
+    "puppeteer": "^24.36.1",
+    "puppeteer-core": "^24.37.5",
+    "resend": "^6.9.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/number-to-words": "^1.2.3",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "vercel": "^50.25.6",
     "vitest": "^4.0.18"
   }
 }
