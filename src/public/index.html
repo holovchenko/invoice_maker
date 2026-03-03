@@ -628,61 +628,55 @@
 
       addPenaltyBtn.addEventListener("click", addPenaltyRow);
 
-      form.addEventListener("submit", function (e) {
+      form.addEventListener("submit", async function (e) {
         e.preventDefault();
         errorMsg.textContent = "";
         submitBtn.disabled = true;
         submitBtn.textContent = "Generating...";
 
-        var body = {
-          date: dateInput.value,
-          hours: Number(hoursInput.value),
-          rate: Number(rateInput.value),
-          penalties: getPenaltyInputs(),
-        };
-        if (invoiceNumberInput.value.trim()) {
-          body.invoiceNumber = invoiceNumberInput.value.trim();
+        try {
+          var body = {
+            date: dateInput.value,
+            hours: Number(hoursInput.value),
+            rate: Number(rateInput.value),
+            penalties: getPenaltyInputs(),
+          };
+          if (invoiceNumberInput.value.trim()) {
+            body.invoiceNumber = invoiceNumberInput.value.trim();
+          }
+
+          var response = await fetch("/api/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+            var data = await response.json();
+            throw new Error(data.error || "Failed to generate invoice");
+          }
+
+          var disposition = response.headers.get("Content-Disposition");
+          var fileName = "invoice.pdf";
+          if (disposition && disposition.includes("filename=")) {
+            var match = disposition.match(/filename="?([^";]+)"?/);
+            if (match) fileName = match[1];
+          }
+          var blob = await response.blob();
+          var url = window.URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          errorMsg.textContent = err.message;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Generate PDF";
         }
-
-        // Use native form POST so the browser handles Content-Disposition
-        var iframe = document.createElement("iframe");
-        iframe.name = "downloadFrame_" + Date.now();
-        iframe.style.display = "none";
-        document.body.appendChild(iframe);
-
-        var downloadForm = document.createElement("form");
-        downloadForm.method = "POST";
-        downloadForm.action = "/api/generate";
-        downloadForm.target = iframe.name;
-        downloadForm.style.display = "none";
-
-        var jsonInput = document.createElement("input");
-        jsonInput.type = "hidden";
-        jsonInput.name = "_json";
-        jsonInput.value = JSON.stringify(body);
-        downloadForm.appendChild(jsonInput);
-
-        document.body.appendChild(downloadForm);
-        downloadForm.submit();
-        downloadForm.remove();
-
-        iframe.addEventListener("load", function () {
-          try {
-            var text = iframe.contentDocument.body.textContent;
-            if (text) {
-              var result = JSON.parse(text);
-              if (result.error) errorMsg.textContent = result.error;
-            }
-          } catch (e) { /* PDF downloaded successfully */ }
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Generate PDF";
-          setTimeout(function () { iframe.remove(); }, 1000);
-        });
-
-        setTimeout(function () {
-          submitBtn.disabled = false;
-          submitBtn.textContent = "Generate PDF";
-        }, 30000);
       });
 
       // === Init ===

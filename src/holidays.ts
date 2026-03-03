@@ -3,6 +3,13 @@ import path from "path";
 
 export const NAGER_API_BASE = "https://date.nager.at/api/v3/publicholidays";
 
+// In-memory cache for serverless environments (read-only filesystem)
+const memoryCache = new Map<number, ReadonlyArray<string>>();
+
+export function clearMemoryCache(): void {
+  memoryCache.clear();
+}
+
 interface NagerHoliday {
   readonly date: string;
   readonly localName: string;
@@ -69,14 +76,21 @@ export async function fetchHolidays(
   year: number,
   configDir?: string,
 ): Promise<ReadonlyArray<string>> {
+  // Check in-memory cache first (survives across requests in same serverless instance)
+  const memoryCached = memoryCache.get(year);
+  if (memoryCached) return memoryCached;
+
   const dir = configDir ?? getConfigDir();
   try {
     const holidays = await fetchFromApi(year);
+    memoryCache.set(year, holidays);
     saveCachedHolidays(year, holidays, dir);
     return holidays;
   } catch {
     const cached = loadCachedHolidays(year, dir);
-    return cached ?? [];
+    const result = cached ?? [];
+    if (result.length > 0) memoryCache.set(year, result);
+    return result;
   }
 }
 

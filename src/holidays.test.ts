@@ -4,6 +4,7 @@ import {
   fetchHolidaysForRange,
   loadCachedHolidays,
   saveCachedHolidays,
+  clearMemoryCache,
   NAGER_API_BASE,
 } from "./holidays";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
@@ -100,6 +101,7 @@ describe("fetchHolidays", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn());
+    clearMemoryCache();
   });
 
   it("fetches holidays from API and caches them", async () => {
@@ -159,6 +161,7 @@ describe("fetchHolidaysForRange", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn());
+    clearMemoryCache();
   });
 
   it("fetches holidays for both years when they differ", async () => {
