@@ -24,14 +24,18 @@ export function saveCachedHolidays(
   holidays: ReadonlyArray<string>,
   configDir?: string,
 ): void {
-  const dir = configDir ?? getConfigDir();
-  const holidaysDir = path.join(dir, "holidays");
-  mkdirSync(holidaysDir, { recursive: true });
-  writeFileSync(
-    getCachePath(year, dir),
-    JSON.stringify(holidays, null, 2),
-    "utf-8",
-  );
+  try {
+    const dir = configDir ?? getConfigDir();
+    const holidaysDir = path.join(dir, "holidays");
+    mkdirSync(holidaysDir, { recursive: true });
+    writeFileSync(
+      getCachePath(year, dir),
+      JSON.stringify(holidays, null, 2),
+      "utf-8",
+    );
+  } catch {
+    // Silently skip caching on read-only filesystems (Vercel serverless)
+  }
 }
 
 export function loadCachedHolidays(
