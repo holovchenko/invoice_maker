@@ -657,23 +657,18 @@
           }
 
           var disposition = response.headers.get("Content-Disposition");
-          var fileName = "invoice.pdf";
+          var fileName = "invoice_" + dateInput.value + ".pdf";
           if (disposition && disposition.includes("filename=")) {
-            fileName = disposition.split("filename=")[1].replace(/['"]/g, "").trim();
+            var parsed = disposition.split("filename=")[1];
+            if (parsed) fileName = parsed.replace(/['"]/g, "").trim();
           }
           var arrayBuffer = await response.arrayBuffer();
           var blob = new Blob([arrayBuffer], { type: "application/pdf" });
-          var url = window.URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.style.display = "none";
-          a.href = url;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function () {
-            a.remove();
-            window.URL.revokeObjectURL(url);
-          }, 100);
+          var link = document.createElement("a");
+          link.href = window.URL.createObjectURL(blob);
+          link.setAttribute("download", fileName);
+          link.click();
+          setTimeout(function () { window.URL.revokeObjectURL(link.href); }, 200);
         } catch (err) {
           errorMsg.textContent = err.message;
         } finally {
