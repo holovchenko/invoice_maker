@@ -99,6 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     return res.send(pdfBuffer);
   } catch (error) {
     console.error("PDF generation error:", error);
