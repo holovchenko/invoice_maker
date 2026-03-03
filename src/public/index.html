@@ -402,8 +402,13 @@
           if (resp.ok) {
             checkAuth();
           } else {
-            var data = await resp.json();
-            throw new Error(data.error || "Authentication failed");
+            var contentType = resp.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+              var data = await resp.json();
+              throw new Error(data.error || "Authentication failed");
+            } else {
+              throw new Error("Server error. Please try again.");
+            }
           }
         } catch (err) {
           document.getElementById("login-error").textContent = err.message;
