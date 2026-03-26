@@ -13,6 +13,8 @@ import {
   createSession,
   getSessionEmail,
   deleteSession,
+  normalizeEmail,
+  isValidEmail,
 } from "./auth.js";
 
 describe("registerUser", () => {
@@ -59,6 +61,52 @@ describe("registerUser", () => {
       "user:user@example.com",
       expect.any(Object),
     );
+  });
+
+  it("strips spaces from email", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    await registerUser("edgostev. 1995@gmail.com", "password123");
+    expect(kvGet).toHaveBeenCalledWith("user:edgostev.1995@gmail.com");
+    expect(kvSet).toHaveBeenCalledWith(
+      "user:edgostev.1995@gmail.com",
+      expect.any(Object),
+    );
+  });
+
+  it("throws for invalid email format", async () => {
+    vi.mocked(kvGet).mockResolvedValue(null);
+    await expect(registerUser("not-an-email", "password123")).rejects.toThrow(
+      "Invalid email address",
+    );
+    expect(kvSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("normalizeEmail", () => {
+  it("lowercases and trims", () => {
+    expect(normalizeEmail("  User@Example.COM  ")).toBe("user@example.com");
+  });
+
+  it("removes internal spaces", () => {
+    expect(normalizeEmail("edgostev. 1995@gmail.com")).toBe("edgostev.1995@gmail.com");
+  });
+
+  it("removes multiple spaces", () => {
+    expect(normalizeEmail("user @ example . com")).toBe("user@example.com");
+  });
+});
+
+describe("isValidEmail", () => {
+  it("accepts valid emails", () => {
+    expect(isValidEmail("user@example.com")).toBe(true);
+    expect(isValidEmail("a.b@c.d")).toBe(true);
+  });
+
+  it("rejects invalid emails", () => {
+    expect(isValidEmail("not-an-email")).toBe(false);
+    expect(isValidEmail("@example.com")).toBe(false);
+    expect(isValidEmail("user@")).toBe(false);
+    expect(isValidEmail("")).toBe(false);
   });
 });
 

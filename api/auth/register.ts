@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { registerUser, createSession } from "../../src/auth.js";
+import { registerUser, createSession, normalizeEmail, isValidEmail } from "../../src/auth.js";
 import { setSessionCookie } from "../../src/api-helpers.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -12,8 +12,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
+  const normalized = normalizeEmail(email);
+  if (!isValidEmail(normalized)) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
+
   try {
-    const created = await registerUser(email, password);
+    const created = await registerUser(normalized, password);
     if (!created) {
       return res.status(409).json({ error: "Email already registered" });
     }
@@ -22,8 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: message });
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
-  const sessionToken = await createSession(normalizedEmail);
+  const sessionToken = await createSession(normalized);
   setSessionCookie(res, sessionToken);
 
   return res.status(201).json({ ok: true });

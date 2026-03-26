@@ -386,10 +386,21 @@
         document.getElementById("login-error").style.display = "none";
       });
 
+      var emailInput = document.getElementById("login-email");
+      emailInput.addEventListener("blur", function () {
+        this.value = this.value.toLowerCase().trim().replace(/\s+/g, "");
+      });
+
       loginBtn.addEventListener("click", async function () {
-        var email = document.getElementById("login-email").value;
+        var email = emailInput.value.toLowerCase().trim().replace(/\s+/g, "");
+        emailInput.value = email;
         var password = document.getElementById("login-password").value;
         if (!email || !password) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          document.getElementById("login-error").textContent = "Invalid email address";
+          document.getElementById("login-error").style.display = "block";
+          return;
+        }
         this.disabled = true;
         document.getElementById("login-error").style.display = "none";
         try {

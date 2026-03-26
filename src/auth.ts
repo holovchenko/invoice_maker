@@ -5,6 +5,7 @@ import { kvGet, kvSet, kvDel } from "./kv.js";
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const BCRYPT_ROUNDS = 10;
 const MIN_PASSWORD_LENGTH = 8;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface UserRecord {
   passwordHash: string;
@@ -15,11 +16,22 @@ interface SessionData {
   email: string;
 }
 
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim().replace(/\s+/g, "");
+}
+
+export function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
 export async function registerUser(email: string, password: string): Promise<boolean> {
   if (password.length < MIN_PASSWORD_LENGTH) {
     throw new Error("Password must be at least 8 characters");
   }
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
+  if (!isValidEmail(normalizedEmail)) {
+    throw new Error("Invalid email address");
+  }
   const userKey = `user:${normalizedEmail}`;
   const existing = await kvGet<UserRecord>(userKey);
   if (existing) return false;
@@ -34,7 +46,7 @@ export async function registerUser(email: string, password: string): Promise<boo
 }
 
 export async function verifyPassword(email: string, password: string): Promise<boolean> {
-  const normalizedEmail = email.toLowerCase().trim();
+  const normalizedEmail = normalizeEmail(email);
   const userKey = `user:${normalizedEmail}`;
   const user = await kvGet<UserRecord>(userKey);
   if (!user) return false;
