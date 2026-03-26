@@ -6,10 +6,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const email = await getAuthenticatedEmail(req);
-  if (!email) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+  try {
+    const email = await getAuthenticatedEmail(req);
+    if (!email) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
 
-  return res.status(200).json({ email });
+    return res.status(200).json({ email });
+  } catch (err) {
+    console.error("[me] error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 }

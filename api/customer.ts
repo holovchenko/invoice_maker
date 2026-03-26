@@ -7,15 +7,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const email = await getAuthenticatedEmail(req);
-  if (!email) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
+  try {
+    const email = await getAuthenticatedEmail(req);
+    if (!email) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
 
-  const customer = await kvGet("customer");
-  if (!customer) {
-    return res.status(404).json({ error: "Customer config not set" });
-  }
+    const customer = await kvGet("customer");
+    if (!customer) {
+      return res.status(404).json({ error: "Customer config not set" });
+    }
 
-  return res.status(200).json(customer);
+    return res.status(200).json(customer);
+  } catch (err) {
+    console.error("[customer] error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
 }

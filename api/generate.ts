@@ -102,7 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
     return res.send(pdfBuffer);
   } catch (error) {
-    console.error("PDF generation error:", error);
+    console.error(`[generate] error for ${email}:`, error);
     return res.status(500).json({ error: "Failed to generate PDF" });
   }
 }

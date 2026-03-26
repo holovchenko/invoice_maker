@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ penalties: results });
   } catch (error) {
-    console.error("Penalty calculation error:", error);
+    console.error(`[calculate-penalties] error for ${email}:`, error);
     return res.status(500).json({ error: "Failed to calculate penalties" });
   }
 }
