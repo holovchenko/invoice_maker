@@ -21,6 +21,10 @@ export interface SupplierConfig {
   readonly fileNamePattern: string;
   readonly surname: string;
   readonly customerShort: string;
+  // Default "Date and Place" city. Optional for backward compatibility with
+  // existing configs; falls back to Kyiv/Київ when absent.
+  readonly cityEN?: string;
+  readonly cityUA?: string;
 }
 
 export interface CustomerBank {

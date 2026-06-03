@@ -12,6 +12,8 @@ const SAMPLE_DATA: InvoiceData = {
   totalWordsEN: "five thousand one hundred sixty-two euros",
   totalWordsUA: "п'ять тисяч сто шістдесят два євро",
   paymentDueDate: "28.01.2026",
+  cityEN: "Kyiv",
+  cityUA: "Київ",
   penalties: [],
 };
 
@@ -67,6 +69,15 @@ describe("renderInvoiceHTML", () => {
     expect(html).toContain("31.12.2025, Kyiv");
     expect(html).toContain("Дата та місце:");
     expect(html).toContain("31.12.2025, м. Київ");
+  });
+
+  it("renders the city from invoice data, with 'м.' prefix only in UA", () => {
+    const data: InvoiceData = { ...SAMPLE_DATA, cityEN: "Lviv", cityUA: "Львів" };
+    const html = renderInvoiceHTML(data, SAMPLE_SUPPLIER, SAMPLE_CUSTOMER);
+    expect(html).toContain("31.12.2025, Lviv");
+    expect(html).toContain("31.12.2025, м. Львів");
+    expect(html).not.toContain("31.12.2025, Kyiv");
+    expect(html).not.toContain("31.12.2025, м. Київ");
   });
 
   it("includes supplier information from config", () => {

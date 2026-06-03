@@ -52,3 +52,36 @@ describe("nextInvoiceNumber", () => {
     expect(data.next).toBe(6);
   });
 });
+
+describe("bumpCounterTo", () => {
+  let originalContent: string | null = null;
+
+  beforeEach(() => {
+    originalContent = fs.existsSync(COUNTER_PATH)
+      ? fs.readFileSync(COUNTER_PATH, "utf-8")
+      : null;
+  });
+
+  afterEach(() => {
+    if (originalContent !== null) {
+      fs.writeFileSync(COUNTER_PATH, originalContent);
+    } else if (fs.existsSync(COUNTER_PATH)) {
+      fs.unlinkSync(COUNTER_PATH);
+    }
+  });
+
+  it("advances counter so next auto-number follows a manual number", async () => {
+    fs.writeFileSync(COUNTER_PATH, JSON.stringify({ next: 7 }) + "\n");
+    const { bumpCounterTo, nextInvoiceNumber } = await import("./counter.js");
+    bumpCounterTo(40);
+    expect(nextInvoiceNumber()).toBe("41");
+  });
+
+  it("does not move the counter backward for a lower manual number", async () => {
+    fs.writeFileSync(COUNTER_PATH, JSON.stringify({ next: 100 }) + "\n");
+    const { bumpCounterTo } = await import("./counter.js");
+    bumpCounterTo(40);
+    const data = JSON.parse(fs.readFileSync(COUNTER_PATH, "utf-8"));
+    expect(data.next).toBe(100);
+  });
+});

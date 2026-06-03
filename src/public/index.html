@@ -371,6 +371,12 @@
         <label for="s-registrationCode">Registration Code</label>
         <input type="text" id="s-registrationCode" required>
 
+        <label for="s-cityEN">City (EN)</label>
+        <input type="text" id="s-cityEN" placeholder="Kyiv">
+
+        <label for="s-cityUA">City (UA)</label>
+        <input type="text" id="s-cityUA" placeholder="Київ">
+
         <label for="s-signatureEN">Signature (EN)</label>
         <input type="text" id="s-signatureEN" required>
 
@@ -419,6 +425,12 @@
 
           <label for="rate">Hourly rate EUR</label>
           <input type="number" id="rate" name="rate" value="20" min="0" step="0.01" required>
+
+          <label for="cityEN">City (EN)</label>
+          <input type="text" id="cityEN" name="cityEN" placeholder="Kyiv">
+
+          <label for="cityUA">City (UA)</label>
+          <input type="text" id="cityUA" name="cityUA" placeholder="Київ">
 
           <div class="penalties-section">
             <div class="penalties-header">
@@ -548,8 +560,11 @@
       // === Settings ===
       var settingsFields = [
         "nameEN", "nameUA", "addressEN", "addressUA", "registrationCode",
-        "signatureEN", "signatureUA", "surname", "customerShort",
+        "cityEN", "cityUA", "signatureEN", "signatureUA", "surname", "customerShort",
       ];
+
+      // Supplier city defaults, used to prefill the invoice form's city fields.
+      var supplierCity = { en: "", ua: "" };
 
       async function loadSettings() {
         try {
@@ -567,6 +582,7 @@
             document.getElementById("s-bankBic").value = data.bank.bic || "";
             document.getElementById("s-bankReceiver").value = data.bank.receiver || "";
           }
+          supplierCity = { en: data.cityEN || "", ua: data.cityUA || "" };
           return data;
         } catch {
           return null;
@@ -623,6 +639,14 @@
       function showInvoiceForm() {
         document.getElementById("settings-view").style.display = "none";
         document.getElementById("invoice-view").style.display = "block";
+        // Prefill city from supplier defaults; user can override per invoice.
+        if (supplierCity.en) document.getElementById("cityEN").value = supplierCity.en;
+        if (supplierCity.ua) document.getElementById("cityUA").value = supplierCity.ua;
+        // Prefill the hourly rate with the last value the user entered.
+        try {
+          var savedRate = localStorage.getItem("lastRate");
+          if (savedRate) document.getElementById("rate").value = savedRate;
+        } catch {}
         loadNextInvoiceNumber();
       }
 
@@ -761,11 +785,16 @@
             date: dateInput.value,
             hours: Number(hoursInput.value),
             rate: Number(rateInput.value),
+            cityEN: document.getElementById("cityEN").value.trim(),
+            cityUA: document.getElementById("cityUA").value.trim(),
             penalties: getPenaltyInputs(),
           };
           if (invoiceNumberInput.value.trim()) {
             body.invoiceNumber = invoiceNumberInput.value.trim();
           }
+
+          // Remember the hourly rate for next time.
+          try { localStorage.setItem("lastRate", rateInput.value); } catch {}
 
           var response = await fetch("/api/generate", {
             method: "POST",

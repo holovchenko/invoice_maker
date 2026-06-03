@@ -4,6 +4,8 @@
   "addressEN": "Ukraine, Example str., 1, 01001, Kyiv",
   "addressUA": "01001, Київ, Прикладна, 1",
   "registrationCode": "1234567890",
+  "cityEN": "Kyiv",
+  "cityUA": "Київ",
   "signatureEN": "Doe John",
   "signatureUA": "Доу Д.Б.",
   "bank": {

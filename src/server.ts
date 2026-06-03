@@ -9,7 +9,7 @@ import {
   formatDate,
   generateFileName,
 } from "./format.js";
-import { nextInvoiceNumber } from "./counter.js";
+import { nextInvoiceNumber, bumpCounterTo } from "./counter.js";
 import { renderInvoiceHTML } from "./template.js";
 import { generatePDF } from "./pdf-generator.js";
 import { loadSupplierConfig, loadCustomerConfig } from "./config.js";
@@ -28,9 +28,24 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/generate", async (req, res) => {
   try {
-    const { date, hours, rate, penalties: penaltyInputs = [] } = req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: penaltyInputs = [] } = req.body;
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
+
+    // City: per-invoice override → supplier default → Kyiv/Київ fallback.
+    const cityEN = (bodyCityEN && String(bodyCityEN).trim()) || supplierConfig.cityEN || "Kyiv";
+    const cityUA = (bodyCityUA && String(bodyCityUA).trim()) || supplierConfig.cityUA || "Київ";
+
+    // Invoice number: use custom or auto-increment. A manual number advances
+    // the counter so the next auto-number follows it (advance-only).
+    let invoiceNumber: string;
+    if (customInvoiceNumber) {
+      invoiceNumber = String(customInvoiceNumber);
+      const n = parseInt(invoiceNumber, 10);
+      if (!Number.isNaN(n)) bumpCounterTo(n);
+    } else {
+      invoiceNumber = nextInvoiceNumber();
+    }
     const years = new Set<number>();
     years.add(invoiceDate.getFullYear());
     const estimatedEndDate = new Date(invoiceDate);
@@ -63,7 +78,7 @@ app.post("/api/generate", async (req, res) => {
     const grandTotal = Math.round((serviceAmount + penaltyTotal) * 100) / 100;
 
     const data = {
-      invoiceNumber: nextInvoiceNumber(),
+      invoiceNumber,
       invoiceDate: formatDate(invoiceDate),
       hours,
       rate: formatAmount(rate),
@@ -72,6 +87,8 @@ app.post("/api/generate", async (req, res) => {
       totalWordsEN: amountToWordsEN(grandTotal),
       totalWordsUA: amountToWordsUA(grandTotal),
       paymentDueDate: formatDate(paymentDueDate),
+      cityEN,
+      cityUA,
       penalties: validPenalties.map((p: PenaltyResult) => ({
         invoiceNo: p.invoiceNo,
         delayDays: p.delayDays,

@@ -27,3 +27,14 @@ export function nextInvoiceNumber(): string {
   writeCounter({ next: num + 1 });
   return String(num);
 }
+
+// Sync the counter after a manually entered invoice number so the next
+// auto-number continues from it. Advance-only: never moves backward, to
+// avoid re-issuing numbers already used.
+export function bumpCounterTo(used: number): void {
+  const data = readCounter();
+  const nextAfter = used + 1;
+  if (nextAfter > data.next) {
+    writeCounter({ next: nextAfter });
+  }
+}

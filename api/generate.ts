@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getAuthenticatedEmail } from "../src/api-helpers.js";
-import { kvGet, kvIncr } from "../src/kv.js";
+import { kvGet, kvIncr, kvSet } from "../src/kv.js";
 import { renderInvoiceHTML } from "../src/template.js";
 import { generatePDFBuffer } from "../src/pdf-generator.js";
 import { calculatePenalty } from "../src/penalty.js";
@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { date, hours, rate, invoiceNumber: customInvoiceNumber, penalties: penaltyInputs = [] } = req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: penaltyInputs = [] } = req.body;
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
 
@@ -37,11 +37,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Invoice number: use custom or auto-increment
+    const counterKey = `counter:${email}`;
     let invoiceNumber: string;
     if (customInvoiceNumber) {
       invoiceNumber = String(customInvoiceNumber);
+      // Keep the counter in sync so the next auto-number follows the manual
+      // one. Advance-only: never move backward, to avoid re-issuing numbers.
+      const n = parseInt(invoiceNumber, 10);
+      if (!Number.isNaN(n)) {
+        const current = await kvGet<number>(counterKey);
+        if (n > (current ?? 0)) {
+          await kvSet(counterKey, n);
+        }
+      }
     } else {
-      const counterKey = `counter:${email}`;
       const next = await kvIncr(counterKey);
       invoiceNumber = String(next);
     }
@@ -74,6 +83,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     );
     const grandTotal = Math.round((serviceAmount + penaltyTotal) * 100) / 100;
 
+    // City: per-invoice override → supplier default → Kyiv/Київ fallback.
+    const cityEN = (bodyCityEN && String(bodyCityEN).trim()) || supplier.cityEN || "Kyiv";
+    const cityUA = (bodyCityUA && String(bodyCityUA).trim()) || supplier.cityUA || "Київ";
+
     const data = {
       invoiceNumber,
       invoiceDate: formatDate(invoiceDate),
@@ -84,6 +97,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       totalWordsEN: amountToWordsEN(grandTotal),
       totalWordsUA: amountToWordsUA(grandTotal),
       paymentDueDate: formatDate(paymentDueDate),
+      cityEN,
+      cityUA,
       penalties: validPenalties.map((p: PenaltyResult) => ({
         invoiceNo: p.invoiceNo,
         delayDays: p.delayDays,

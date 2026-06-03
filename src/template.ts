@@ -18,6 +18,8 @@ export interface InvoiceData {
   readonly totalWordsEN: string;
   readonly totalWordsUA: string;
   readonly paymentDueDate: string;
+  readonly cityEN: string;
+  readonly cityUA: string;
   readonly penalties: ReadonlyArray<PenaltyRow>;
 }
 
@@ -45,6 +47,8 @@ export function renderInvoiceHTML(
     totalWordsEN: escapeHTML(data.totalWordsEN),
     totalWordsUA: escapeHTML(data.totalWordsUA),
     paymentDueDate: escapeHTML(data.paymentDueDate),
+    cityEN: escapeHTML(data.cityEN),
+    cityUA: escapeHTML(data.cityUA),
   };
 
   const s = {
@@ -195,8 +199,8 @@ export function renderInvoiceHTML(
 
 <table class="info-table">
   <tr>
-    <td><span class="label">Date and Place:</span> ${d.invoiceDate}, Kyiv</td>
-    <td><span class="label">Дата та місце:</span> ${d.invoiceDate}, м. Київ</td>
+    <td><span class="label">Date and Place:</span> ${d.invoiceDate}, ${d.cityEN}</td>
+    <td><span class="label">Дата та місце:</span> ${d.invoiceDate}, м. ${d.cityUA}</td>
   </tr>
   <tr>
     <td>
