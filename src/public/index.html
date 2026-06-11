@@ -693,7 +693,7 @@
           '<label>Invoice Date</label>' +
           '<input type="date" class="p-invoiceDate">' +
           '<label>Invoice Amount (EUR)</label>' +
-          '<input type="number" class="p-amount" step="0.01" min="0">' +
+          '<input type="text" inputmode="decimal" class="p-amount" placeholder="5263.50">' +
           '<label>Payment Received</label>' +
           '<input type="date" class="p-received">' +
           '<div class="penalty-preview" id="preview-' + id + '"></div>';
@@ -719,7 +719,7 @@
           var row = rows[i];
           var invoiceNo = row.querySelector(".p-invoiceNo").value;
           var invoiceDate = row.querySelector(".p-invoiceDate").value;
-          var invoiceAmount = Number(row.querySelector(".p-amount").value);
+          var invoiceAmount = parseFloat(row.querySelector(".p-amount").value.replace(",", "."));
           var paymentReceivedDate = row.querySelector(".p-received").value;
           if (invoiceNo && invoiceDate && invoiceAmount && paymentReceivedDate) {
             result.push({
