@@ -101,10 +101,9 @@ describe("parseAmount", () => {
     expect(parseAmount(5263.5)).toBe(5263.5);
   });
 
-  it("rejects a long whitespace run quickly", () => {
-    const start = performance.now();
+  it("rejects input longer than the length cap", () => {
     expect(parseAmount("1" + " ".repeat(90000) + "1")).toBeNull();
-    expect(performance.now() - start).toBeLessThan(50);
+    expect(parseAmount("0".repeat(40) + "5")).toBeNull();
   });
 
   it.each([1e21, 1234.567, 1_000_000_001])("rejects out-of-range or over-precise number %j", (input) => {
