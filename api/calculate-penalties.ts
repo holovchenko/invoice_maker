@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getAuthenticatedEmail } from "../src/api-helpers.js";
-import { calculatePenalty, parsePenaltyInput, invalidAmountMessage } from "../src/penalty.js";
-import type { RawPenaltyInput } from "../src/penalty.js";
+import { calculatePenalty, parsePenaltyInput, invalidAmountMessage, isPenaltyRow } from "../src/penalty.js";
 import { fetchHolidaysForRange } from "../src/holidays.js";
 import { formatAmount, formatDate } from "../src/format.js";
 
@@ -17,9 +16,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { penalties: penaltyInputs = [] } = req.body;
+    if (!Array.isArray(penaltyInputs)) {
+      return res.status(400).json({ error: "Penalties must be a list" });
+    }
 
     const years = new Set<number>();
-    for (const p of penaltyInputs) {
+    for (const p of penaltyInputs.filter(isPenaltyRow)) {
       const invoiceDate = new Date(p.invoiceDate);
       years.add(invoiceDate.getFullYear());
       years.add(invoiceDate.getFullYear() + 1);
@@ -30,7 +32,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? await fetchHolidaysForRange(sortedYears[0], sortedYears[sortedYears.length - 1])
       : [];
 
-    const results = penaltyInputs.map((raw: RawPenaltyInput) => {
+    const results = penaltyInputs.map((raw: unknown) => {
+      if (!isPenaltyRow(raw)) {
+        return { error: "Invalid penalty row" };
+      }
       const p = parsePenaltyInput(raw);
       if (!p) {
         return { invoiceNo: raw.invoiceNo, error: invalidAmountMessage(raw) };

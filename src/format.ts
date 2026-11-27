@@ -29,32 +29,42 @@ export function generateFileName(
   return `${surname}_Invoice_${month}_${customerShort}_${year}.pdf`;
 }
 
-const PLAIN_AMOUNT = /^(\d+)(?:[.,](\d{1,2}))?$/;
-const GROUPED_AMOUNT = /^([1-9]\d{0,2})([.,])(\d{3}(?:\2\d{3})*)(?:(?!\2)[.,](\d{1,2}))?$/;
+const MAX_AMOUNT = 1_000_000_000;
+const PLAIN_AMOUNT = /^(\d+)(?:[.,](\d{0,2}))?$/;
+const GROUPED_AMOUNT = /^([1-9]\d{0,2})([.,\s])(\d{3}(?:\2\d{3})*)(?:(?!\2)[.,](\d{0,2}))?$/;
+const CURRENCY_PREFIX = /^(?:€|EUR)\s*/i;
+const CURRENCY_SUFFIX = /\s*(?:€|EUR)$/i;
 
-// Accepts "5263.50", "5263,50", "3 000", "3,000.50", "3.000,50". A single
-// separator followed by exactly three digits is a thousands separator.
+function validAmount(amount: number): number | null {
+  return Number.isFinite(amount) && amount > 0 && amount <= MAX_AMOUNT ? amount : null;
+}
+
+// Accepts "5263.50", "5263,50", "3 000", "3,000.50", "3.000,50", "5263.50 EUR",
+// "€5263.50". A single separator followed by exactly three digits is a
+// thousands separator; whitespace is valid only as a thousands separator.
 export function parseAmount(input: unknown): number | null {
   if (typeof input === "number") {
-    return Number.isFinite(input) && input > 0 ? input : null;
+    return Math.round(input * 100) / 100 === input ? validAmount(input) : null;
   }
   if (typeof input !== "string") {
     return null;
   }
-  const compact = input.replace(/\s/g, "");
+  const trimmed = input.trim();
+  const text = CURRENCY_PREFIX.test(trimmed)
+    ? trimmed.replace(CURRENCY_PREFIX, "")
+    : trimmed.replace(CURRENCY_SUFFIX, "");
   let intPart: string;
   let decPart: string | undefined;
-  const plain = PLAIN_AMOUNT.exec(compact);
+  const plain = PLAIN_AMOUNT.exec(text);
   if (plain) {
     [, intPart, decPart] = plain;
   } else {
-    const grouped = GROUPED_AMOUNT.exec(compact);
+    const grouped = GROUPED_AMOUNT.exec(text);
     if (!grouped) {
       return null;
     }
-    intPart = grouped[1] + grouped[3].replace(/[.,]/g, "");
+    intPart = grouped[1] + grouped[3].replace(/[.,\s]/g, "");
     decPart = grouped[4];
   }
-  const amount = Number(`${intPart}.${decPart ?? "0"}`);
-  return amount > 0 ? amount : null;
+  return validAmount(Number(`${intPart}.${decPart || "0"}`));
 }

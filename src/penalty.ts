@@ -21,12 +21,36 @@ export type RawPenaltyInput = Omit<PenaltyInput, "invoiceAmount"> & {
 };
 
 export function invalidAmountMessage(input: RawPenaltyInput): string {
-  return `Invoice ${input.invoiceNo}: cannot read amount "${String(input.invoiceAmount)}"`;
+  return `Invoice ${input.invoiceNo}: invalid amount "${String(input.invoiceAmount)}"`;
 }
 
 export function parsePenaltyInput(input: RawPenaltyInput): PenaltyInput | null {
   const invoiceAmount = parseAmount(input.invoiceAmount);
   return invoiceAmount === null ? null : { ...input, invoiceAmount };
+}
+
+export function isPenaltyRow(row: unknown): row is RawPenaltyInput {
+  return typeof row === "object" && row !== null;
+}
+
+export function parsePenaltyInputs(
+  raw: unknown,
+): { inputs: PenaltyInput[] } | { error: string } {
+  if (!Array.isArray(raw)) {
+    return { error: "Penalties must be a list" };
+  }
+  const inputs: PenaltyInput[] = [];
+  for (const row of raw) {
+    if (!isPenaltyRow(row)) {
+      return { error: "Invalid penalty row" };
+    }
+    const input = parsePenaltyInput(row);
+    if (input === null) {
+      return { error: invalidAmountMessage(row) };
+    }
+    inputs.push(input);
+  }
+  return { inputs };
 }
 
 const PENALTY_RATE = 0.001;

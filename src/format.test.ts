@@ -81,6 +81,17 @@ describe("parseAmount", () => {
     ["1.234.567,8", 1234567.8],
     [" 12.5 ", 12.5],
     ["0,5", 0.5],
+    ["3 000,50", 3000.5],
+    ["1 234 567,89", 1234567.89],
+    ["1 234.5", 1234.5],
+    ["5263.50 EUR", 5263.5],
+    ["€5263.50", 5263.5],
+    ["3,000 eur", 3000],
+    ["EUR 12,5", 12.5],
+    ["€ 12.5", 12.5],
+    ["5263.", 5263],
+    ["3 000,", 3000],
+    ["1,234,567", 1234567],
   ])("parses %j as %d", (input, expected) => {
     expect(parseAmount(input)).toBe(expected);
   });
@@ -89,9 +100,21 @@ describe("parseAmount", () => {
     expect(parseAmount(5263.5)).toBe(5263.5);
   });
 
+  it.each([1e21, 1234.567, 1_000_000_001])("rejects out-of-range or over-precise number %j", (input) => {
+    expect(parseAmount(input)).toBeNull();
+  });
+
+  it.each([
+    "10 50", "3 00", "1 2.34", "3 0 0 0", "12 3", "3 000 00",
+    "9".repeat(400), "12345678901234567890",
+    "EUR", "€", "5 USD", ".5", "abc", "€5 EUR",
+  ])("rejects %j (tightened rules)", (input) => {
+    expect(parseAmount(input)).toBeNull();
+  });
+
   it.each([
     "", "abc", "12abc", "1,2,3", "3,00,000", "1.234.56", "1,234.567",
-    "0,500", "-5", "0", "12.", ",5", "1.2.3,4.5",
+    "0,500", "-5", "0", ",5", "1.2.3,4.5",
   ])("rejects %j", (input) => {
     expect(parseAmount(input)).toBeNull();
   });

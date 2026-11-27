@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculatePenalty, parsePenaltyInput } from "./penalty";
+import { calculatePenalty, parsePenaltyInput, parsePenaltyInputs, invalidAmountMessage } from "./penalty";
 
 describe("calculatePenalty", () => {
   it("calculates penalty for a late payment", () => {
@@ -119,5 +119,43 @@ describe("parsePenaltyInput", () => {
 
   it("returns null for an unreadable amount", () => {
     expect(parsePenaltyInput({ ...base, invoiceAmount: "3,00,0" })).toBeNull();
+  });
+});
+
+describe("invalidAmountMessage", () => {
+  it("names the invoice and the offending value", () => {
+    const row = { invoiceNo: "23", invoiceDate: "2026-06-30", paymentReceivedDate: "2026-10-14", invoiceAmount: "0" };
+    expect(invalidAmountMessage(row)).toBe('Invoice 23: invalid amount "0"');
+  });
+});
+
+describe("parsePenaltyInputs", () => {
+  const row = {
+    invoiceNo: "23",
+    invoiceDate: "2026-06-30",
+    paymentReceivedDate: "2026-10-14",
+    invoiceAmount: "3,000",
+  };
+
+  it.each([[{}], [null], ["abc"]])("rejects non-array %j", (raw) => {
+    expect(parsePenaltyInputs(raw)).toEqual({ error: "Penalties must be a list" });
+  });
+
+  it.each([[""], [0], [false], [null]])("rejects element %j", (element) => {
+    expect(parsePenaltyInputs([element])).toEqual({ error: "Invalid penalty row" });
+  });
+
+  it("reports the first row with an unreadable amount", () => {
+    const result = parsePenaltyInputs([row, { ...row, invoiceNo: "77", invoiceAmount: "abc" }]);
+    expect(result).toEqual({ error: 'Invoice 77: invalid amount "abc"' });
+  });
+
+  it("parses every row to a numeric amount", () => {
+    const result = parsePenaltyInputs([row, { ...row, invoiceNo: "24", invoiceAmount: "5263,50" }]);
+    expect(result).toMatchObject({ inputs: [{ invoiceNo: "23", invoiceAmount: 3000 }, { invoiceNo: "24", invoiceAmount: 5263.5 }] });
+  });
+
+  it("accepts an empty list", () => {
+    expect(parsePenaltyInputs([])).toEqual({ inputs: [] });
   });
 });
