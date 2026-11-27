@@ -30,10 +30,13 @@ export function generateFileName(
 }
 
 const MAX_AMOUNT = 1_000_000_000;
+const MAX_INPUT_LENGTH = 40;
+const SPACE = "[ \u00a0\u202f]";
 const PLAIN_AMOUNT = /^(\d+)(?:[.,](\d{0,2}))?$/;
-const GROUPED_AMOUNT = /^([1-9]\d{0,2})([.,\s])(\d{3}(?:\2\d{3})*)(?:(?!\2)[.,](\d{0,2}))?$/;
-const CURRENCY_PREFIX = /^(?:€|EUR)\s*/i;
-const CURRENCY_SUFFIX = /\s*(?:€|EUR)$/i;
+const GROUPED_AMOUNT = /^([1-9]\d{0,2})([.,\u0020\u00a0\u202f])(\d{3}(?:\2\d{3})*)(?:(?!\2)[.,](\d{0,2}))?$/;
+const CURRENCY_PREFIX = new RegExp(`^(?:€|EUR)${SPACE}*`, "i");
+const CURRENCY_SUFFIX = /(?:€|EUR)$/i;
+const TRAILING_SPACE = new RegExp(`${SPACE}+$`);
 
 function validAmount(amount: number): number | null {
   return Number.isFinite(amount) && amount > 0 && amount <= MAX_AMOUNT ? amount : null;
@@ -49,10 +52,13 @@ export function parseAmount(input: unknown): number | null {
   if (typeof input !== "string") {
     return null;
   }
+  if (input.length > MAX_INPUT_LENGTH) {
+    return null;
+  }
   const trimmed = input.trim();
   const text = CURRENCY_PREFIX.test(trimmed)
     ? trimmed.replace(CURRENCY_PREFIX, "")
-    : trimmed.replace(CURRENCY_SUFFIX, "");
+    : trimmed.replace(CURRENCY_SUFFIX, "").replace(TRAILING_SPACE, "");
   let intPart: string;
   let decPart: string | undefined;
   const plain = PLAIN_AMOUNT.exec(text);
@@ -63,7 +69,7 @@ export function parseAmount(input: unknown): number | null {
     if (!grouped) {
       return null;
     }
-    intPart = grouped[1] + grouped[3].replace(/[.,\s]/g, "");
+    intPart = grouped[1] + grouped[3].replace(/[.,\u0020\u00a0\u202f]/g, "");
     decPart = grouped[4];
   }
   return validAmount(Number(`${intPart}.${decPart || "0"}`));

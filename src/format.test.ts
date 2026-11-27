@@ -89,9 +89,10 @@ describe("parseAmount", () => {
     ["3,000 eur", 3000],
     ["EUR 12,5", 12.5],
     ["€ 12.5", 12.5],
+    ["5 €", 5],
     ["5263.", 5263],
     ["3 000,", 3000],
-    ["1,234,567", 1234567],
+    ["1,000,000,000", 1000000000],
   ])("parses %j as %d", (input, expected) => {
     expect(parseAmount(input)).toBe(expected);
   });
@@ -100,13 +101,20 @@ describe("parseAmount", () => {
     expect(parseAmount(5263.5)).toBe(5263.5);
   });
 
+  it("rejects a long whitespace run quickly", () => {
+    const start = performance.now();
+    expect(parseAmount("1" + " ".repeat(90000) + "1")).toBeNull();
+    expect(performance.now() - start).toBeLessThan(50);
+  });
+
   it.each([1e21, 1234.567, 1_000_000_001])("rejects out-of-range or over-precise number %j", (input) => {
     expect(parseAmount(input)).toBeNull();
   });
 
   it.each([
     "10 50", "3 00", "1 2.34", "3 0 0 0", "12 3", "3 000 00",
-    "9".repeat(400), "12345678901234567890",
+    "9".repeat(400), "12345678901234567890", "1,000,000,000.01",
+    "3\t000", "3\n000", "EUR\n12.5", "3\u3000000",
     "EUR", "€", "5 USD", ".5", "abc", "€5 EUR",
   ])("rejects %j (tightened rules)", (input) => {
     expect(parseAmount(input)).toBeNull();

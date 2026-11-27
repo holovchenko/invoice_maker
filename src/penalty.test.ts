@@ -114,6 +114,7 @@ describe("parsePenaltyInput", () => {
     const input = parsePenaltyInput({ ...base, invoiceAmount: "3,000" });
     expect(input?.invoiceAmount).toBe(3000);
     const result = calculatePenalty(input!);
+    expect(result.delayDays).toBeGreaterThan(0);
     expect(result.penaltyAmount).toBe(3 * result.delayDays);
   });
 
@@ -153,6 +154,27 @@ describe("parsePenaltyInputs", () => {
   it("parses every row to a numeric amount", () => {
     const result = parsePenaltyInputs([row, { ...row, invoiceNo: "24", invoiceAmount: "5263,50" }]);
     expect(result).toMatchObject({ inputs: [{ invoiceNo: "23", invoiceAmount: 3000 }, { invoiceNo: "24", invoiceAmount: 5263.5 }] });
+  });
+
+  it.each([
+    [{ ...row, invoiceAmount: { toString: "x" } }],
+    [{ ...row, invoiceNo: { toString: 1 }, invoiceAmount: "abc" }],
+  ])("returns an error instead of throwing for %j", (bad) => {
+    expect(parsePenaltyInputs([bad])).toHaveProperty("error");
+  });
+
+  it("describes a row without fields", () => {
+    expect(parsePenaltyInputs([{}])).toEqual({ error: "Invoice ?: invalid amount missing" });
+  });
+
+  it("describes a non-scalar amount", () => {
+    const result = parsePenaltyInputs([{ ...row, invoiceAmount: {} }]);
+    expect(result).toEqual({ error: "Invoice 23: invalid amount not a number" });
+  });
+
+  it("truncates a long amount to 40 characters", () => {
+    const result = parsePenaltyInputs([{ ...row, invoiceAmount: "x".repeat(100) }]);
+    expect(result).toEqual({ error: `Invoice 23: invalid amount "${"x".repeat(40)}"` });
   });
 
   it("accepts an empty list", () => {

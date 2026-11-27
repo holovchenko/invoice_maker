@@ -20,8 +20,22 @@ export type RawPenaltyInput = Omit<PenaltyInput, "invoiceAmount"> & {
   readonly invoiceAmount: unknown;
 };
 
+const MAX_SHOWN_LENGTH = 40;
+
+function isScalar(value: unknown): value is string | number {
+  return typeof value === "string" || typeof value === "number";
+}
+
 export function invalidAmountMessage(input: RawPenaltyInput): string {
-  return `Invoice ${input.invoiceNo}: invalid amount "${String(input.invoiceAmount)}"`;
+  const { invoiceNo, invoiceAmount } = input;
+  const no = isScalar(invoiceNo) ? String(invoiceNo).slice(0, MAX_SHOWN_LENGTH) : "?";
+  let shown: string;
+  if (isScalar(invoiceAmount)) {
+    shown = `"${String(invoiceAmount).slice(0, MAX_SHOWN_LENGTH)}"`;
+  } else {
+    shown = invoiceAmount === undefined || invoiceAmount === null ? "missing" : "not a number";
+  }
+  return `Invoice ${no}: invalid amount ${shown}`;
 }
 
 export function parsePenaltyInput(input: RawPenaltyInput): PenaltyInput | null {
