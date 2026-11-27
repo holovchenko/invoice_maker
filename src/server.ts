@@ -13,7 +13,7 @@ import { nextInvoiceNumber, bumpCounterTo } from "./counter.js";
 import { renderInvoiceHTML } from "./template.js";
 import { generatePDF } from "./pdf-generator.js";
 import { loadSupplierConfig, loadCustomerConfig } from "./config.js";
-import { calculatePenalty } from "./penalty.js";
+import { calculatePenalty, parsePenaltyInput, parsePenaltyInputs, invalidAmountMessage, isPenaltyRow } from "./penalty.js";
 import type { PenaltyInput, PenaltyResult } from "./penalty.js";
 
 const supplierConfig = loadSupplierConfig();
@@ -28,7 +28,12 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/generate", async (req, res) => {
   try {
-    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: penaltyInputs = [] } = req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: rawPenaltyInputs = [] } = req.body;
+    const parsedPenalties = parsePenaltyInputs(rawPenaltyInputs);
+    if ("error" in parsedPenalties) {
+      return res.status(400).json({ error: parsedPenalties.error });
+    }
+    const penaltyInputs = parsedPenalties.inputs;
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
 
@@ -120,8 +125,11 @@ app.post("/api/generate", async (req, res) => {
 app.post("/api/calculate-penalties", async (req, res) => {
   try {
     const { penalties: penaltyInputs = [] } = req.body;
+    if (!Array.isArray(penaltyInputs)) {
+      return res.status(400).json({ error: "Penalties must be a list" });
+    }
     const years = new Set<number>();
-    for (const p of penaltyInputs) {
+    for (const p of penaltyInputs.filter(isPenaltyRow)) {
       const invoiceDate = new Date(p.invoiceDate);
       years.add(invoiceDate.getFullYear());
       years.add(invoiceDate.getFullYear() + 1);
@@ -133,10 +141,18 @@ app.post("/api/calculate-penalties", async (req, res) => {
       ? await fetchHolidaysForRange(sortedYears[0], sortedYears[sortedYears.length - 1])
       : [];
 
-    const results = penaltyInputs.map((p: PenaltyInput) => {
+    const results = penaltyInputs.map((raw: unknown) => {
+      if (!isPenaltyRow(raw)) {
+        return { error: "Invalid penalty row" };
+      }
+      const p = parsePenaltyInput(raw);
+      if (!p) {
+        return { invoiceNo: raw.invoiceNo, error: invalidAmountMessage(raw) };
+      }
       const result = calculatePenalty(p, holidays);
       return {
         invoiceNo: result.invoiceNo,
+        invoiceAmount: formatAmount(p.invoiceAmount),
         dueDate: formatDate(result.dueDate),
         actualPaymentDate: formatDate(result.actualPaymentDate),
         delayDays: result.delayDays,
