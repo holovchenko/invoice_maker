@@ -13,8 +13,8 @@ import { nextInvoiceNumber, bumpCounterTo } from "./counter.js";
 import { renderInvoiceHTML } from "./template.js";
 import { generatePDF } from "./pdf-generator.js";
 import { loadSupplierConfig, loadCustomerConfig } from "./config.js";
-import { calculatePenalty } from "./penalty.js";
-import type { PenaltyInput, PenaltyResult } from "./penalty.js";
+import { calculatePenalty, parsePenaltyInput, invalidAmountMessage } from "./penalty.js";
+import type { PenaltyInput, PenaltyResult, RawPenaltyInput } from "./penalty.js";
 
 const supplierConfig = loadSupplierConfig();
 const customerConfig = loadCustomerConfig();
@@ -28,7 +28,14 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.post("/api/generate", async (req, res) => {
   try {
-    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: penaltyInputs = [] } = req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: rawPenaltyInputs = [] } = req.body;
+    const invalidPenalty = rawPenaltyInputs.find(
+      (p: RawPenaltyInput) => parsePenaltyInput(p) === null,
+    );
+    if (invalidPenalty) {
+      return res.status(400).json({ error: invalidAmountMessage(invalidPenalty) });
+    }
+    const penaltyInputs: PenaltyInput[] = rawPenaltyInputs.map(parsePenaltyInput);
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
 
@@ -133,10 +140,15 @@ app.post("/api/calculate-penalties", async (req, res) => {
       ? await fetchHolidaysForRange(sortedYears[0], sortedYears[sortedYears.length - 1])
       : [];
 
-    const results = penaltyInputs.map((p: PenaltyInput) => {
+    const results = penaltyInputs.map((raw: RawPenaltyInput) => {
+      const p = parsePenaltyInput(raw);
+      if (!p) {
+        return { invoiceNo: raw.invoiceNo, error: invalidAmountMessage(raw) };
+      }
       const result = calculatePenalty(p, holidays);
       return {
         invoiceNo: result.invoiceNo,
+        invoiceAmount: formatAmount(p.invoiceAmount),
         dueDate: formatDate(result.dueDate),
         actualPaymentDate: formatDate(result.actualPaymentDate),
         delayDays: result.delayDays,

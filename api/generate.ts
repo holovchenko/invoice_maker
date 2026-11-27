@@ -3,8 +3,8 @@ import { getAuthenticatedEmail } from "../src/api-helpers.js";
 import { kvGet, kvIncr, kvSet } from "../src/kv.js";
 import { renderInvoiceHTML } from "../src/template.js";
 import { generatePDFBuffer } from "../src/pdf-generator.js";
-import { calculatePenalty } from "../src/penalty.js";
-import type { PenaltyInput, PenaltyResult } from "../src/penalty.js";
+import { calculatePenalty, parsePenaltyInput, invalidAmountMessage } from "../src/penalty.js";
+import type { PenaltyInput, PenaltyResult, RawPenaltyInput } from "../src/penalty.js";
 import { addBusinessDays } from "../src/business-days.js";
 import { fetchHolidaysForRange } from "../src/holidays.js";
 import { formatAmount, formatDate, generateFileName } from "../src/format.js";
@@ -22,7 +22,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: penaltyInputs = [] } = req.body;
+    const { date, hours, rate, invoiceNumber: customInvoiceNumber, cityEN: bodyCityEN, cityUA: bodyCityUA, penalties: rawPenaltyInputs = [] } = req.body;
+    const invalidPenalty = rawPenaltyInputs.find(
+      (p: RawPenaltyInput) => parsePenaltyInput(p) === null,
+    );
+    if (invalidPenalty) {
+      return res.status(400).json({ error: invalidAmountMessage(invalidPenalty) });
+    }
+    const penaltyInputs: PenaltyInput[] = rawPenaltyInputs.map(parsePenaltyInput);
     const invoiceDate = new Date(date);
     const serviceAmount = hours * rate;
 

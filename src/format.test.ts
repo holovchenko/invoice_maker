@@ -3,6 +3,7 @@ import {
   formatAmount,
   formatDate,
   generateFileName,
+  parseAmount,
 } from "./format";
 
 describe("formatAmount", () => {
@@ -62,5 +63,40 @@ describe("generateFileName", () => {
     expect(generateFileName(new Date(2026, 5, 15), "Smith", "Acme")).toBe(
       "Smith_Invoice_Jun_Acme_2026.pdf"
     );
+  });
+});
+
+describe("parseAmount", () => {
+  it.each([
+    ["5263.50", 5263.5],
+    ["5263,50", 5263.5],
+    ["3000", 3000],
+    ["3,000", 3000],
+    ["3.000", 3000],
+    ["3 000", 3000],
+    ["3\u00a0000,50", 3000.5],
+    ["3,000.50", 3000.5],
+    ["3.000,50", 3000.5],
+    ["1,234,567", 1234567],
+    ["1.234.567,8", 1234567.8],
+    [" 12.5 ", 12.5],
+    ["0,5", 0.5],
+  ])("parses %j as %d", (input, expected) => {
+    expect(parseAmount(input)).toBe(expected);
+  });
+
+  it("passes through positive finite numbers", () => {
+    expect(parseAmount(5263.5)).toBe(5263.5);
+  });
+
+  it.each([
+    "", "abc", "12abc", "1,2,3", "3,00,000", "1.234.56", "1,234.567",
+    "0,500", "-5", "0", "12.", ",5", "1.2.3,4.5",
+  ])("rejects %j", (input) => {
+    expect(parseAmount(input)).toBeNull();
+  });
+
+  it.each([null, undefined, NaN, Infinity, 0, -1, {}])("rejects non-amount %j", (input) => {
+    expect(parseAmount(input)).toBeNull();
   });
 });

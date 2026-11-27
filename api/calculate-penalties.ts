@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getAuthenticatedEmail } from "../src/api-helpers.js";
-import { calculatePenalty } from "../src/penalty.js";
-import type { PenaltyInput } from "../src/penalty.js";
+import { calculatePenalty, parsePenaltyInput, invalidAmountMessage } from "../src/penalty.js";
+import type { RawPenaltyInput } from "../src/penalty.js";
 import { fetchHolidaysForRange } from "../src/holidays.js";
 import { formatAmount, formatDate } from "../src/format.js";
 
@@ -30,10 +30,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? await fetchHolidaysForRange(sortedYears[0], sortedYears[sortedYears.length - 1])
       : [];
 
-    const results = penaltyInputs.map((p: PenaltyInput) => {
+    const results = penaltyInputs.map((raw: RawPenaltyInput) => {
+      const p = parsePenaltyInput(raw);
+      if (!p) {
+        return { invoiceNo: raw.invoiceNo, error: invalidAmountMessage(raw) };
+      }
       const result = calculatePenalty(p, holidays);
       return {
         invoiceNo: result.invoiceNo,
+        invoiceAmount: formatAmount(p.invoiceAmount),
         delayDays: result.delayDays,
         penaltyAmount: formatAmount(result.penaltyAmount),
         dueDate: formatDate(result.dueDate),

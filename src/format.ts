@@ -28,3 +28,33 @@ export function generateFileName(
   const year = date.getFullYear();
   return `${surname}_Invoice_${month}_${customerShort}_${year}.pdf`;
 }
+
+const PLAIN_AMOUNT = /^(\d+)(?:[.,](\d{1,2}))?$/;
+const GROUPED_AMOUNT = /^([1-9]\d{0,2})([.,])(\d{3}(?:\2\d{3})*)(?:(?!\2)[.,](\d{1,2}))?$/;
+
+// Accepts "5263.50", "5263,50", "3 000", "3,000.50", "3.000,50". A single
+// separator followed by exactly three digits is a thousands separator.
+export function parseAmount(input: unknown): number | null {
+  if (typeof input === "number") {
+    return Number.isFinite(input) && input > 0 ? input : null;
+  }
+  if (typeof input !== "string") {
+    return null;
+  }
+  const compact = input.replace(/\s/g, "");
+  let intPart: string;
+  let decPart: string | undefined;
+  const plain = PLAIN_AMOUNT.exec(compact);
+  if (plain) {
+    [, intPart, decPart] = plain;
+  } else {
+    const grouped = GROUPED_AMOUNT.exec(compact);
+    if (!grouped) {
+      return null;
+    }
+    intPart = grouped[1] + grouped[3].replace(/[.,]/g, "");
+    decPart = grouped[4];
+  }
+  const amount = Number(`${intPart}.${decPart ?? "0"}`);
+  return amount > 0 ? amount : null;
+}

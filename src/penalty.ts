@@ -1,4 +1,5 @@
 import { addBusinessDays, subtractBusinessDays } from "./business-days.js";
+import { parseAmount } from "./format.js";
 
 export interface PenaltyInput {
   readonly invoiceNo: string;
@@ -13,6 +14,19 @@ export interface PenaltyResult {
   readonly actualPaymentDate: Date;
   readonly delayDays: number;
   readonly penaltyAmount: number;
+}
+
+export type RawPenaltyInput = Omit<PenaltyInput, "invoiceAmount"> & {
+  readonly invoiceAmount: unknown;
+};
+
+export function invalidAmountMessage(input: RawPenaltyInput): string {
+  return `Invoice ${input.invoiceNo}: cannot read amount "${String(input.invoiceAmount)}"`;
+}
+
+export function parsePenaltyInput(input: RawPenaltyInput): PenaltyInput | null {
+  const invoiceAmount = parseAmount(input.invoiceAmount);
+  return invoiceAmount === null ? null : { ...input, invoiceAmount };
 }
 
 const PENALTY_RATE = 0.001;

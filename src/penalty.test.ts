@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculatePenalty } from "./penalty";
+import { calculatePenalty, parsePenaltyInput } from "./penalty";
 
 describe("calculatePenalty", () => {
   it("calculates penalty for a late payment", () => {
@@ -100,5 +100,24 @@ describe("calculatePenalty", () => {
 
     const decimalPlaces = result.penaltyAmount.toString().split(".")[1]?.length ?? 0;
     expect(decimalPlaces).toBeLessThanOrEqual(2);
+  });
+});
+
+describe("parsePenaltyInput", () => {
+  const base = {
+    invoiceNo: "23",
+    invoiceDate: "2026-06-30",
+    paymentReceivedDate: "2026-10-14",
+  };
+
+  it("reads an amount typed with a thousands separator as thousands", () => {
+    const input = parsePenaltyInput({ ...base, invoiceAmount: "3,000" });
+    expect(input?.invoiceAmount).toBe(3000);
+    const result = calculatePenalty(input!);
+    expect(result.penaltyAmount).toBe(3 * result.delayDays);
+  });
+
+  it("returns null for an unreadable amount", () => {
+    expect(parsePenaltyInput({ ...base, invoiceAmount: "3,00,0" })).toBeNull();
   });
 });
